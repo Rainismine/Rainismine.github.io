@@ -1,15 +1,279 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="rainward 的个人项目——构建简洁、实用的数字产品。" />
-    <title>rainward · 项目</title>
-    <script type="module" crossorigin src="/assets/index-BIgN-5E6.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CvHIlzcC.css">
-  </head>
-  <body>
-    <div id="app"></div>
-  </body>
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="rainward 的精选工具与精选游戏——构建简洁、实用的数字产品。" />
+<meta name="theme-color" content="#08090d" />
+<title>rainward · 精选</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #08090d;
+    --panel: rgba(18, 21, 28, .72);
+    --line: rgba(255,255,255,.08);
+    --line-strong: rgba(255,255,255,.14);
+    --text: #e8edf2;
+    --muted: #8b95a3;
+    --muted-2: #565f6c;
+    --accent: #62d4ff;
+    --accent-2: #b59cff;
+    --serif: 'Georgia', 'Times New Roman', 'Songti SC', 'SimSun', serif;
+    --sans: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans);
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(98,212,255,.08), transparent 60%),
+      radial-gradient(800px 500px at -10% 100%, rgba(181,156,255,.07), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: rgba(98,212,255,.25); }
+  /* ── 导航 ── */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; gap: 16px;
+    height: 58px; padding: 0 26px;
+    background: rgba(8,9,13,.78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-logo { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 650; letter-spacing: .02em; }
+  .nav-logo .mark {
+    width: 26px; height: 26px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center;
+    font-family: var(--mono); font-size: 11px; font-weight: 600; color: #08131a;
+    box-shadow: 0 0 22px rgba(98,212,255,.35);
+  }
+  .nav-logo em { font-style: normal; color: var(--accent); }
+  .nav-links { margin-left: auto; display: flex; gap: 8px; }
+  .nav-link {
+    font-size: 12px; color: var(--muted); text-decoration: none;
+    border: 1px solid var(--line); border-radius: 999px; padding: 6px 15px;
+    transition: all .2s;
+  }
+  .nav-link:hover { border-color: var(--accent); color: var(--text); box-shadow: 0 0 16px rgba(98,212,255,.15); }
+  /* ── Hero ── */
+  .hero { padding: 74px 26px 40px; text-align: center; }
+  .hero .eyebrow {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 18px;
+  }
+  .hero h1 {
+    font-family: var(--serif); font-weight: 400;
+    font-size: clamp(38px, 6vw, 56px); letter-spacing: .01em;
+    background: linear-gradient(120deg, #f4f7fa 30%, #62d4ff 60%, #b59cff);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero .sub { margin-top: 14px; font-size: 14px; color: var(--muted); letter-spacing: .02em; }
+  /* ── 板块切换 ── */
+  .section { flex: 1; width: 100%; max-width: 1080px; margin: 0 auto; padding: 8px 26px 70px; }
+  .section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+  .tabs {
+    display: flex; gap: 4px;
+    border: 1px solid var(--line-strong); border-radius: 999px;
+    padding: 4px; background: rgba(255,255,255,.02);
+  }
+  .tab {
+    border: 0; background: transparent; color: var(--muted);
+    font-size: 13px; font-family: var(--sans);
+    padding: 7px 22px; border-radius: 999px; cursor: pointer;
+    transition: all .25s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tab .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .4; transition: all .25s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: linear-gradient(135deg, rgba(98,212,255,.16), rgba(181,156,255,.16)); color: var(--text); box-shadow: 0 0 18px rgba(98,212,255,.12) inset, 0 0 0 1px rgba(98,212,255,.3) inset; }
+  .tab.active .dot { background: var(--accent); opacity: 1; box-shadow: 0 0 8px var(--accent); }
+  .count-pill {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    border: 1px solid var(--line-strong); border-radius: 999px;
+    padding: 4px 12px; background: rgba(255,255,255,.02);
+    margin-left: auto;
+  }
+  /* ── 卡片网格 ── */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .card {
+    position: relative; display: block;
+    background: var(--panel);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--line); border-radius: 16px;
+    overflow: hidden; text-decoration: none; color: inherit;
+    transition: transform .25s, border-color .25s, box-shadow .25s;
+  }
+  .card::before {
+    content: ''; position: absolute; inset: 0 0 auto 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(98,212,255,.5), transparent);
+    opacity: 0; transition: opacity .25s;
+  }
+  .card:hover { transform: translateY(-4px); border-color: rgba(98,212,255,.35); box-shadow: 0 18px 50px rgba(0,0,0,.45), 0 0 30px rgba(98,212,255,.07); }
+  .card:hover::before { opacity: 1; }
+  .card-art {
+    height: 140px; display: grid; place-items: center;
+    background: radial-gradient(280px 120px at 50% -20%, rgba(98,212,255,.22), transparent 70%), radial-gradient(240px 120px at 20% 120%, rgba(181,156,255,.18), transparent 70%), #0d1017;
+    position: relative; overflow: hidden;
+  }
+  .card-art .glyph { font-size: 54px; filter: drop-shadow(0 6px 24px rgba(98,212,255,.25)); transition: transform .3s; }
+  .card:hover .card-art .glyph { transform: scale(1.08); }
+  .card-art.watermelon { background: radial-gradient(280px 120px at 50% -20%, rgba(255,140,66,.28), transparent 70%), radial-gradient(240px 120px at 20% 120%, rgba(98,255,160,.15), transparent 70%), #120e0a; }
+  .card-art.watermelon .glyph { filter: drop-shadow(0 6px 24px rgba(255,140,66,.3)); }
+  .card-body { padding: 18px 20px 22px; }
+  .card-title-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .card-title { font-family: var(--serif); font-size: 19px; font-weight: 400; letter-spacing: .01em; }
+  .card-arrow { margin-left: auto; font-size: 13px; color: var(--muted-2); transition: all .25s; }
+  .card:hover .card-arrow { color: var(--accent); transform: translateX(3px); }
+  .card-desc { font-size: 12.5px; line-height: 1.7; color: var(--muted); }
+  .card-meta { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .06em;
+    color: var(--muted); border: 1px solid var(--line-strong);
+    border-radius: 999px; padding: 3px 10px;
+  }
+  .chip.accent { color: var(--accent); border-color: rgba(98,212,255,.3); }
+  .chip.violet { color: var(--accent-2); border-color: rgba(181,156,255,.3); }
+  /* ── Footer ── */
+  .footer { border-top: 1px solid var(--line); background: rgba(8,9,13,.6); }
+  .footer-inner { max-width: 1080px; margin: 0 auto; padding: 40px 26px; display: flex; align-items: center; gap: 18px; }
+  .footer-big { font-family: var(--serif); font-size: 26px; color: var(--muted-2); }
+  .footer-links { display: flex; gap: 8px; margin-left: auto; }
+  .footer-email { font-family: var(--mono); font-size: 11px; color: var(--muted-2); }
+  .copyright { max-width: 1080px; margin: 0 auto; padding: 0 26px 24px; font-family: var(--mono); font-size: 10px; color: var(--muted-2); }
+  /* ── Reveal ── */
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
+  @media (max-width: 640px) {
+    .hero { padding: 52px 20px 30px; }
+    .nav { padding: 0 16px; }
+    .nav-link { padding: 6px 11px; font-size: 11px; }
+    .section { padding: 6px 16px 50px; }
+    .section-head { flex-wrap: wrap; }
+    .count-pill { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo"><span class="mark">r</span>rain<em>ward</em></div>
+  <div class="nav-links">
+    <a class="nav-link" href="https://github.com/rainward" target="_blank" rel="noopener">GitHub</a>
+    <a class="nav-link" href="mailto:2661909122@qq.com">Email</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="eyebrow reveal">Curated · Selected Works</div>
+  <h1 class="reveal">rainward 的精选</h1>
+  <p class="sub reveal">构建简洁、实用的数字产品——有的正在打磨，有的还在路上。</p>
+</header>
+
+<main class="section">
+  <div class="section-head reveal">
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-panel="tools"><span class="dot"></span>精选工具</button>
+      <button class="tab" data-panel="games"><span class="dot"></span>精选游戏</button>
+    </div>
+    <span class="count-pill" id="count-pill">1 项</span>
+  </div>
+
+  <!-- 精选工具 -->
+  <section class="panel active" id="panel-tools">
+    <div class="grid">
+      <a class="card reveal" href="/resume/">
+        <div class="card-art"><span class="glyph">📄</span></div>
+        <div class="card-body">
+          <div class="card-title-row">
+            <span class="card-title">简历生成器</span>
+            <span class="card-arrow">↗</span>
+          </div>
+          <p class="card-desc">照片上传、自定义栏目、多种模板与主题色，一键导出 PDF，数据本地保存。</p>
+          <div class="card-meta">
+            <span class="chip accent">Tools</span>
+            <span class="chip">PDF 导出</span>
+            <span class="chip">本地数据</span>
+          </div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- 精选游戏 -->
+  <section class="panel" id="panel-games">
+    <div class="grid">
+      <a class="card reveal" href="/watermelon/">
+        <div class="card-art watermelon"><span class="glyph">🍉</span></div>
+        <div class="card-body">
+          <div class="card-title-row">
+            <span class="card-title">合成大西瓜</span>
+            <span class="card-arrow">↗</span>
+          </div>
+          <p class="card-desc">经典合成玩法：落下水果，两两合成，西瓜满贯即通关。物理引擎驱动，全屏触控。</p>
+          <div class="card-meta">
+            <span class="chip violet">Games</span>
+            <span class="chip">Matter.js</span>
+            <span class="chip">触屏支持</span>
+          </div>
+        </div>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <span class="footer-big">rainward</span>
+    <div class="footer-links">
+      <a class="nav-link" href="https://github.com/rainward" target="_blank" rel="noopener">GitHub</a>
+      <a class="nav-link" href="mailto:2661909122@qq.com">Email</a>
+    </div>
+    <span class="footer-email">2661909122@qq.com</span>
+  </div>
+  <div class="copyright">© 2026 rainward · built with care</div>
+</footer>
+
+<script>
+(function () {
+  // ── 板块切换（支持 URL hash：#tools / #games）──
+  var tabs = document.getElementById('tabs')
+  var counts = { tools: document.querySelectorAll('#panel-tools .card').length, games: document.querySelectorAll('#panel-games .card').length }
+  var pill = document.getElementById('count-pill')
+
+  function activate(panel) {
+    document.querySelectorAll('.tab').forEach(function (b) { b.classList.toggle('active', b.dataset.panel === panel) })
+    document.querySelectorAll('.panel').forEach(function (p) { p.classList.toggle('active', p.id === 'panel-' + panel) })
+    pill.textContent = counts[panel] + ' 项'
+    if (location.hash !== '#' + panel) history.replaceState(null, '', '#' + panel)
+  }
+
+  tabs.addEventListener('click', function (e) {
+    var btn = e.target.closest('.tab')
+    if (!btn) return
+    activate(btn.dataset.panel)
+  })
+
+  var initial = (location.hash || '').replace('#', '')
+  activate(initial === 'games' ? 'games' : 'tools')
+
+  // ── Reveal 动画 ──
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target) } })
+  }, { threshold: .08 })
+  document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el) })
+})()
+</script>
+</body>
 </html>

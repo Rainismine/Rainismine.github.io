@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#FFDFA8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>合成大西瓜</title>
+<script src="./matter.min.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; overflow:hidden; overscroll-behavior:none; }
+  body {
+    background: linear-gradient(180deg, #FFE9BE 0%, #FFD79A 100%);
+    font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    display:flex; align-items:center; justify-content:center;
+    touch-action:none; user-select:none; -webkit-user-select:none;
+    color:#5A3A10;
+  }
+  #wrap {
+    position:relative;
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 24px 70px rgba(120,60,0,.28);
+    background:#FFF3D6;
+  }
+  canvas { display:block; }
+
+  /* ===== 顶部 HUD ===== */
+  #hud {
+    position:absolute; top:0; left:0; right:0;
+    display:flex; align-items:flex-start; gap:8px;
+    padding:10px 12px;
+    pointer-events:none;
+    z-index:5;
+  }
+  .pill {
+    background:rgba(255,255,255,.78);
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    border-radius:16px;
+    padding:5px 11px;
+    box-shadow:0 4px 12px rgba(150,90,0,.16);
+    text-align:center;
+    min-width:58px;
+  }
+  .pill .label { font-size:10.5px; color:#B07A2A; font-weight:700; letter-spacing:2px; white-space:nowrap; }
+  .pill .val {
+    font-size:20px; font-weight:900; color:#5A3A10; line-height:1.2;
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ===== 计时器 ===== */
+  #timePill .val { font-size:19px; letter-spacing:.5px; }
+  #timePill.urgent {
+    background:rgba(255,224,224,.92);
+    animation:timePulse .9s ease-in-out infinite;
+  }
+  #timePill.urgent .val   { color:#E02B44; }
+  #timePill.urgent .label { color:#E0566B; }
+  @keyframes timePulse {
+    0%,100% { transform:scale(1);    box-shadow:0 4px 12px rgba(220,40,60,.18); }
+    50%     { transform:scale(1.06); box-shadow:0 6px 18px rgba(220,40,60,.34); }
+  }
+  #hudSpace { flex:1; }
+  #nextWrap { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  #nextBall {
+    width:36px; height:36px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:19px;
+    box-shadow:inset -3px -4px 6px rgba(0,0,0,.14), 0 3px 8px rgba(150,90,0,.22);
+  }
+  #nextWrap .label { font-size:10px; font-weight:700; color:#B07A2A; letter-spacing:2px; }
+  #hudBtns { display:flex; flex-direction:column; gap:6px; }
+  .iconBtn {
+    pointer-events:auto;
+    width:36px; height:36px; border-radius:50%;
+    border:none; cursor:pointer;
+    background:rgba(255,255,255,.85);
+    box-shadow:0 3px 8px rgba(150,90,0,.22);
+    font-size:16px; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+    color:#8A5A2B; font-weight:900;
+    transition:transform .1s;
+  }
+  .iconBtn:active { transform:scale(.88); }
+
+  /* ===== 覆盖层通用 ===== */
+  .overlay {
+    position:absolute; inset:0; z-index:10;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center;
+  }
+  .card {
+    background:rgba(255,255,255,.94);
+    border-radius:26px;
+    padding:26px 26px 24px;
+    box-shadow:0 16px 46px rgba(120,60,0,.30);
+    max-width:88%;
+    animation:popIn .5s cubic-bezier(.2,1.5,.4,1);
+  }
+  @keyframes popIn { from { transform:scale(.6); opacity:0; } to { transform:scale(1); opacity:1; } }
+
+  .btn {
+    display:inline-block;
+    background:linear-gradient(180deg,#FFB340,#FF8C1A);
+    color:#fff; font-size:20px; font-weight:900;
+    border:none; cursor:pointer;
+    border-radius:999px;
+    padding:13px 46px;
+    letter-spacing:4px;
+    box-shadow:0 6px 0 #D9741A, 0 12px 22px rgba(180,90,0,.32);
+    transition:transform .08s, box-shadow .08s;
+    font-family:inherit;
+  }
+  .btn:active { transform:translateY(5px); box-shadow:0 1px 0 #D9741A, 0 4px 10px rgba(180,90,0,.3); }
+
+  /* ===== 开始界面 ===== */
+  #startScreen {
+    background:linear-gradient(180deg,#FFEFC5 0%, #FFDD9E 70%, #FFD08A 100%);
+  }
+  .floatFruit {
+    position:absolute; pointer-events:none;
+    animation:floaty 5.2s ease-in-out infinite alternate;
+    filter:drop-shadow(0 6px 8px rgba(150,80,0,.25));
+  }
+  @keyframes floaty {
+    from { transform:translateY(0) rotate(-8deg); }
+    to   { transform:translateY(-26px) rotate(10deg); }
+  }
+  #gameTitle {
+    font-size:46px; font-weight:900; color:#FF7F27;
+    text-shadow:0 3px 0 rgba(190,95,0,.35), 0 8px 18px rgba(190,95,0,.25);
+    letter-spacing:4px;
+    animation:titleBounce 2.4s ease-in-out infinite;
+    margin-bottom:4px;
+  }
+  @keyframes titleBounce {
+    0%,100% { transform:translateY(0) scale(1); }
+    50%     { transform:translateY(-8px) scale(1.03); }
+  }
+  #subTitle { font-size:12.5px; color:#B07A2A; font-weight:700; letter-spacing:3px; margin-bottom:12px; }
+
+  /* 历史最佳 */
+  #bestRow {
+    display:inline-flex; align-items:center; gap:6px;
+    background:linear-gradient(180deg,#FFF3D8,#FFE7BC);
+    border:1.5px solid rgba(220,160,70,.35);
+    border-radius:999px; padding:5px 16px; margin-bottom:14px;
+    font-size:12px; font-weight:800; color:#A87B36; letter-spacing:1px;
+  }
+  #bestRow b { font-size:16px; color:#E07F1B; font-variant-numeric:tabular-nums; }
+
+  /* 模式选择 */
+  #modeSel { display:flex; gap:8px; margin-bottom:12px; }
+  .modeBtn {
+    flex:1; cursor:pointer; font-family:inherit;
+    border:2px solid rgba(210,160,80,.30);
+    background:#FFF6E4; border-radius:15px; padding:8px 4px;
+    display:flex; flex-direction:column; align-items:center; gap:1px;
+    font-size:14px; font-weight:900; color:#A87B36; letter-spacing:1px;
+    transition:transform .12s, box-shadow .12s, background .18s, border-color .18s, color .18s;
+  }
+  .modeBtn small { font-size:10.5px; font-weight:700; letter-spacing:0; color:#C09456; }
+  .modeBtn.active {
+    background:linear-gradient(180deg,#FFD89C,#FFB95E);
+    border-color:#FF9A2E; color:#7A4708;
+    box-shadow:0 4px 11px rgba(200,120,0,.26);
+  }
+  .modeBtn.active small { color:#8C5B14; }
+  .modeBtn:active { transform:translateY(2px); }
+  .modeBtn:focus-visible { outline:3px solid #FF8C1A; outline-offset:2px; }
+
+  /* 说明分栏 */
+  #tabs {
+    display:flex; gap:4px; padding:4px;
+    background:#F3E2C4; border-radius:999px; margin-bottom:10px;
+  }
+  .tab {
+    flex:1; border:none; cursor:pointer; font-family:inherit;
+    background:transparent; border-radius:999px; padding:6px 0;
+    font-size:12.5px; font-weight:900; letter-spacing:2px; color:#A87B36;
+    transition:background .16s, color .16s, box-shadow .16s;
+  }
+  .tab.active { background:#fff; color:#E07F1B; box-shadow:0 2px 6px rgba(160,100,20,.18); }
+  .tab:focus-visible { outline:3px solid #FF8C1A; outline-offset:2px; }
+  #tabBody { min-height:158px; margin-bottom:16px; }
+  .tabPane { display:none; }
+  .tabPane.show { display:block; animation:fadeUp .26s ease; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
+
+  .howTo {
+    text-align:left; font-size:13px; line-height:2.05; color:#7A5320; font-weight:600;
+    background:#FFF6E2; border-radius:16px; padding:11px 15px;
+  }
+  #chain {
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
+    gap:3px; max-width:300px;
+    background:#FFF6E2; border-radius:16px; padding:12px 10px;
+  }
+  .cb {
+    border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center;
+    box-shadow:inset -2px -3px 4px rgba(0,0,0,.13);
+  }
+  .arrow { color:#C98C3F; font-weight:900; font-size:12px; padding:0 1px; }
+  .chainNote { margin-top:9px; font-size:11.5px; color:#B98A45; font-weight:700; letter-spacing:1px; }
+  .tip { margin-top:12px; font-size:11px; color:#B98A45; font-weight:600; line-height:1.7; }
+  /* 触屏设备不显示键盘提示 */
+  @media (hover:none) and (pointer:coarse) {
+    .tip { display:none; }
+  }
+
+  /* 作者角标 */
+  .authorTag {
+    position:absolute; right:13px; bottom:11px; z-index:12;
+    font-size:11px; font-weight:800; letter-spacing:1.4px;
+    color:#9C6D26;
+    background:rgba(255,255,255,.66);
+    backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);
+    border-radius:999px; padding:5px 13px;
+    box-shadow:0 2px 9px rgba(150,90,0,.16);
+    pointer-events:none;
+  }
+  #overScreen .authorTag { background:rgba(255,255,255,.30); color:#FFE9C0; box-shadow:none; }
+
+  /* ===== 结束界面 ===== */
+  #overScreen {
+    display:none;
+    background:rgba(70,35,0,.45);
+    backdrop-filter:blur(4px);
+    -webkit-backdrop-filter:blur(4px);
+  }
+  #overScreen h2 { font-size:32px; font-weight:900; color:#FF7F27; letter-spacing:6px; margin-bottom:14px; }
+  .statRow {
+    display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:16px;
+    max-width:280px;
+  }
+  .stat { background:#FFF3DC; border-radius:16px; padding:8px 10px; min-width:76px; flex:1 1 76px; }
+  .stat .label { font-size:10.5px; font-weight:800; color:#B07A2A; letter-spacing:1.5px; white-space:nowrap; }
+  .stat .val { font-size:23px; font-weight:900; color:#5A3A10; font-variant-numeric:tabular-nums; }
+  #finalTimeEl { font-size:20px; }
+  #bigFruitWrap { display:flex; flex-direction:column; align-items:center; gap:4px; margin-bottom:18px; }
+  #bigFruitBall {
+    width:74px; height:74px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:42px;
+    box-shadow:inset -5px -7px 10px rgba(0,0,0,.15), 0 8px 18px rgba(150,90,0,.3);
+  }
+  #bigFruitName { font-size:13px; font-weight:800; color:#8A5A2B; }
+
+  /* ===== 提示条 ===== */
+  #toast {
+    position:absolute; left:50%; bottom:100px; z-index:9;
+    transform:translateX(-50%) translateY(20px);
+    background:rgba(70,40,5,.82); color:#FFE9C0;
+    font-size:14px; font-weight:800; letter-spacing:1px;
+    padding:10px 22px; border-radius:999px;
+    opacity:0; pointer-events:none;
+    transition:opacity .3s, transform .3s;
+    white-space:nowrap;
+  }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ===== 加载失败 ===== */
+  #loadErr {
+    display:none;
+    background:#FFF3D6; z-index:20;
+    font-size:15px; font-weight:700; color:#8A5A2B; line-height:2;
+    padding:30px;
+  }
+
+  /* ===== 底部道具卡槽 ===== */
+  #cardBar {
+    position:absolute; left:0; right:0; bottom:0; height:78px;
+    display:flex; align-items:center; justify-content:center;
+    gap:8px; padding:0 10px;
+    background:linear-gradient(180deg, rgba(255,238,204,.96), rgba(255,220,170,1));
+    border-top:2px solid rgba(190,130,50,.20);
+    z-index:6;
+  }
+  .itemCard {
+    position:relative;
+    flex:1 1 0; max-width:106px; height:58px;
+    border:none; cursor:pointer; font-family:inherit;
+    border-radius:15px;
+    background:linear-gradient(180deg,#FFFFFF,#FFF1D6);
+    box-shadow:0 3px 0 rgba(190,130,50,.38), 0 6px 13px rgba(150,90,0,.18);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    color:#7A5320;
+    transition:transform .09s, box-shadow .09s, filter .25s;
+  }
+  .itemCard .ic { font-size:21px; line-height:1; }
+  .itemCard .nm { font-size:11px; font-weight:800; letter-spacing:1px; }
+  .itemCard .key {
+    position:absolute; left:5px; top:3px;
+    font-size:9px; font-weight:800; color:#D2AE79;
+  }
+  .itemCard .cnt {
+    position:absolute; right:-5px; top:-7px;
+    min-width:21px; height:21px; padding:0 5px;
+    border-radius:999px; line-height:21px;
+    background:linear-gradient(180deg,#FFA845,#F4761B);
+    color:#fff; font-size:12px; font-weight:900;
+    box-shadow:0 2px 5px rgba(160,80,0,.38);
+  }
+  .itemCard:active { transform:translateY(3px); box-shadow:0 0 0 rgba(190,130,50,.38), 0 3px 8px rgba(150,90,0,.18); }
+  .itemCard:focus-visible { outline:3px solid #FF8C1A; outline-offset:2px; }
+  .itemCard.dim { filter:grayscale(.9) opacity(.45); }
+  .itemCard.dim .cnt { background:#C9B392; }
+  .itemCard.gain { animation:cardGain .6s ease; }
+  @keyframes cardGain {
+    0%   { transform:scale(1); }
+    35%  { transform:scale(1.18) rotate(-4deg); }
+    60%  { transform:scale(1.05) rotate(2deg); }
+    100% { transform:scale(1); }
+  }
+
+  /* ===== 消失卡抽取面板 ===== */
+  #rouletteScreen { display:none; background:rgba(70,35,0,.42); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
+  #rouletteScreen .card { padding:20px 20px 18px; min-width:270px; }
+  .rTitle { font-size:20px; font-weight:900; color:#FF7F27; letter-spacing:2px; }
+  .rSub { font-size:11.5px; font-weight:700; color:#B07A2A; margin:5px 0 12px; }
+  .rRow {
+    display:flex; align-items:center; gap:8px;
+    padding:4px 8px; border-radius:12px;
+    transition:background .12s, transform .12s, box-shadow .12s;
+  }
+  .rRow.hit { background:#FFE9BE; transform:scale(1.04); }
+  .rRow.win {
+    background:linear-gradient(90deg,#FFDD9B,#FFB13F);
+    transform:scale(1.07);
+    box-shadow:0 5px 14px rgba(200,120,0,.32);
+  }
+  .rBall {
+    width:26px; height:26px; border-radius:50%; flex:none;
+    display:flex; align-items:center; justify-content:center; font-size:14px;
+    box-shadow:inset -2px -3px 4px rgba(0,0,0,.13);
+  }
+  .rName { width:48px; flex:none; text-align:left; font-size:12px; font-weight:800; color:#7A5320; }
+  .rBarWrap { flex:1; min-width:76px; height:9px; border-radius:999px; background:#F1E1C2; overflow:hidden; }
+  .rBar { display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,#FFC46B,#FF8C1A); }
+  .rPct { width:42px; flex:none; text-align:right; font-size:11px; font-weight:800; color:#B07A2A; font-variant-numeric:tabular-nums; }
+  #rouletteResult { margin-top:13px; height:22px; font-size:15px; font-weight:900; color:#5A3A10; letter-spacing:1px; }
+
+  /* ===== 暂停 ===== */
+  #pauseScreen { display:none; background:rgba(70,35,0,.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }
+  #pauseScreen h2 { font-size:30px; font-weight:900; color:#FF7F27; letter-spacing:6px; margin-bottom:16px; }
+  .linkBtn {
+    margin-top:14px; background:none; border:none; cursor:pointer; font-family:inherit;
+    font-size:13px; font-weight:800; color:#B07A2A; letter-spacing:2px;
+    text-decoration:underline; text-underline-offset:4px;
+  }
+
+  /* ===== 开始页道具说明 ===== */
+  #cardIntro {
+    text-align:left; font-size:11.5px; line-height:1.95; color:#7A5320; font-weight:600;
+    background:#FFF6E2; border-radius:16px; padding:11px 14px;
+  }
+  #cardIntro b { color:#C4711A; }
+  #cardIntro .rare {
+    display:inline-block; font-style:normal;
+    font-size:9.5px; font-weight:900; letter-spacing:1px;
+    color:#fff; background:linear-gradient(90deg,#FF9E3D,#FF6BA8,#7B8CFF);
+    border-radius:999px; padding:1px 7px; margin-left:2px;
+    vertical-align:1px;
+  }
+  #startScreen .card { max-height:95%; overflow-y:auto; touch-action:pan-y; width:330px; max-width:92%; }
+  #startScreen .card::-webkit-scrollbar { width:0; }
+
+  /* 矮屏 / 超窄屏：压缩开始界面，给右下角作者角标留出空间 */
+  @media (max-height:730px), (max-width:340px) {
+    #startScreen .card { padding:18px 18px 16px; }
+    #gameTitle { font-size:36px; }
+    #subTitle { font-size:11.5px; margin-bottom:9px; }
+    #bestRow { margin-bottom:10px; padding:4px 13px; }
+    #modeSel { margin-bottom:9px; }
+    .modeBtn { padding:6px 4px; font-size:13px; }
+    #tabs { margin-bottom:8px; }
+    #tabBody { min-height:130px; margin-bottom:12px; }
+    .howTo { font-size:12px; line-height:1.8; padding:9px 12px; }
+    #cardIntro { font-size:11px; line-height:1.8; }
+    .btn { padding:11px 38px; font-size:18px; }
+  }
+
+  /* 窄屏压缩 HUD，保证三个信息条 + 按钮不挤 */
+  @media (max-width:365px) {
+    #hud { gap:6px; padding:8px 9px; }
+    .pill { min-width:50px; padding:4px 8px; }
+    .pill .label { font-size:9.5px; letter-spacing:1px; }
+    .pill .val { font-size:18px; }
+    #timePill .val { font-size:16.5px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #gameTitle, .floatFruit, .itemCard.gain, #timePill.urgent, .tabPane.show { animation:none; }
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- 顶部信息栏 -->
+  <div id="hud">
+    <div class="pill"><div class="label">分数</div><div class="val" id="scoreEl">0</div></div>
+    <div class="pill" id="timePill"><div class="label" id="timeLabelEl">用时</div><div class="val" id="timeEl">00:00</div></div>
+    <div class="pill"><div class="label">最佳</div><div class="val" id="bestEl">0</div></div>
+    <div id="hudSpace"></div>
+    <div id="nextWrap">
+      <div id="nextBall">🍒</div>
+      <div class="label">下一个</div>
+    </div>
+    <div id="hudBtns">
+      <button class="iconBtn" id="pauseBtn" title="暂停">⏸</button>
+      <button class="iconBtn" id="soundBtn" title="音效开关">🔊</button>
+      <button class="iconBtn" id="restartBtn" title="重新开始">↻</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- 底部道具卡槽 -->
+  <div id="cardBar"></div>
+
+  <!-- 开始界面 -->
+  <div class="overlay" id="startScreen">
+    <span class="floatFruit" style="left:8%;  top:9%;  font-size:44px; animation-delay:0s;">🍉</span>
+    <span class="floatFruit" style="right:10%; top:13%; font-size:34px; animation-delay:-1.4s;">🍑</span>
+    <span class="floatFruit" style="left:14%; bottom:11%; font-size:36px; animation-delay:-2.6s;">🍍</span>
+    <span class="floatFruit" style="right:12%; bottom:8%;  font-size:30px; animation-delay:-3.8s;">🍒</span>
+    <span class="floatFruit" style="left:46%; top:4%;  font-size:26px; animation-delay:-2s;">🍋</span>
+    <div class="card">
+      <div id="gameTitle">合成大西瓜</div>
+      <div id="subTitle">越合越大 · 冲上西瓜级</div>
+
+      <div id="bestRow">🏆 历史最佳 <b id="startBestEl">0</b></div>
+
+      <div id="modeSel">
+        <button class="modeBtn active" id="modeClassic" data-mode="classic">🍉 经典<small>不限时 · 自由发挥</small></button>
+        <button class="modeBtn" id="modeTimed" data-mode="timed">⏱ 限时<small>3 分钟冲分</small></button>
+      </div>
+
+      <div id="tabs">
+        <button class="tab active" data-tab="paneHow">玩法</button>
+        <button class="tab" data-tab="paneCard">道具</button>
+        <button class="tab" data-tab="paneChain">图鉴</button>
+      </div>
+
+      <div id="tabBody">
+        <div class="tabPane show" id="paneHow">
+          <div class="howTo">
+            👆 按住左右移动瞄准，松手放下水果<br>
+            🍒 两个相同的水果碰到会合成更大的<br>
+            ⚡ 连击越快，得分加成越高<br>
+            ⏱ 限时模式下时间归零即结算<br>
+            ⚠️ 水果堆过上方虚线就会失败
+          </div>
+        </div>
+        <div class="tabPane" id="paneCard">
+          <div id="cardIntro">
+            <b>💨 消失卡</b>　场上随机一种水果全部消失，越难合成的越不容易被抽中<br>
+            <b>🔄 换果卡</b>　立刻换掉手上这一颗<br>
+            <b>🌪 震荡卡</b>　全场晃一晃让果堆塌实，3 秒内不判负<br>
+            <b>🌈 彩虹果</b><i class="rare">稀有</i>　碰到谁就跟谁合成升一级，1500 分后才可能掉落<br>
+            <span style="color:#B98A45;">每 1000 分、连击 4 / 8 连各送一张</span>
+          </div>
+        </div>
+        <div class="tabPane" id="paneChain">
+          <div id="chain"></div>
+          <div class="chainNote">11 级水果链 · 两个西瓜相撞可爆场加分</div>
+        </div>
+      </div>
+
+      <button class="btn" id="startBtn">开始游戏</button>
+      <div class="tip">键盘：← → 移动 · 空格投放 · 1~4 用卡 · P 暂停</div>
+    </div>
+    <div class="authorTag">Author · Wu Feihong</div>
+  </div>
+
+  <!-- 结束界面 -->
+  <div class="overlay" id="overScreen">
+    <div class="card">
+      <h2 id="overTitle">游戏结束</h2>
+      <div id="bigFruitWrap">
+        <div id="bigFruitBall">🍒</div>
+        <div id="bigFruitName">最大合成 · 樱桃</div>
+      </div>
+      <div class="statRow">
+        <div class="stat"><div class="label">本局得分</div><div class="val" id="finalScoreEl">0</div></div>
+        <div class="stat"><div class="label">本局用时</div><div class="val" id="finalTimeEl">00:00</div></div>
+        <div class="stat"><div class="label">最高连击</div><div class="val" id="finalComboEl">0</div></div>
+        <div class="stat"><div class="label">历史最佳</div><div class="val" id="finalBestEl">0</div></div>
+      </div>
+      <button class="btn" id="againBtn">再来一局</button>
+      <div><button class="linkBtn" id="homeBtn">返回首页 · 换个模式</button></div>
+    </div>
+    <div class="authorTag">Author · Wu Feihong</div>
+  </div>
+
+  <!-- 消失卡抽取面板 -->
+  <div class="overlay" id="rouletteScreen">
+    <div class="card">
+      <div class="rTitle">💨 水果消失卡</div>
+      <div class="rSub">越难合成的水果，越不容易被抽中</div>
+      <div id="rouletteList"></div>
+      <div id="rouletteResult">抽取中…</div>
+    </div>
+  </div>
+
+  <!-- 暂停 -->
+  <div class="overlay" id="pauseScreen">
+    <div class="card">
+      <h2>已 暂 停</h2>
+      <button class="btn" id="resumeBtn">继续游戏</button>
+      <div><button class="linkBtn" id="quitBtn">重新开始这一局</button></div>
+    </div>
+  </div>
+
+  <!-- 引擎加载失败 -->
+  <div class="overlay" id="loadErr">
+    <div>😢 物理引擎加载失败<br>请检查网络连接后刷新页面重试<br><span style="font-size:12px;color:#B98A45;">（游戏首次打开需要联网）</span></div>
+  </div>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+/* ================= 基础配置 ================= */
+var LW = 480;
+var LH = Math.max(680, Math.min(920, Math.round(LW * window.innerHeight / Math.max(1, window.innerWidth))));
+var DPR = Math.min(2, window.devicePixelRatio || 1);
+var DANGER_Y = 225;   // 危险线
+var DROP_Y   = 165;   // 放果高度
+
+/* 水果配置：名称 / 表情 / 半径 / 亮色 / 暗色 / 合成得分 */
+var FRUITS = [
+  { name:'樱桃',   emoji:'🍒', r:24,  light:'#FF8FA3', dark:'#E5384F', gain:2   },
+  { name:'草莓',   emoji:'🍓', r:32,  light:'#FF8C7A', dark:'#E8402A', gain:4   },
+  { name:'葡萄',   emoji:'🍇', r:42,  light:'#C39BFF', dark:'#8E5BD8', gain:8   },
+  { name:'柠檬',   emoji:'🍋', r:52,  light:'#FFE98A', dark:'#F2B90D', gain:12  },
+  { name:'橙子',   emoji:'🍊', r:64,  light:'#FFC46B', dark:'#F78F1E', gain:18  },
+  { name:'苹果',   emoji:'🍎', r:78,  light:'#FF8A70', dark:'#D93A25', gain:26  },
+  { name:'梨',     emoji:'🍐', r:92,  light:'#DFF09A', dark:'#93BF36', gain:36  },
+  { name:'桃子',   emoji:'🍑', r:108, light:'#FFD3DA', dark:'#FF96AC', gain:48  },
+  { name:'菠萝',   emoji:'🍍', r:124, light:'#FFDF70', dark:'#E89B12', gain:62  },
+  { name:'哈密瓜', emoji:'🍈', r:142, light:'#D6F5CF', dark:'#7FD18A', gain:80  },
+  { name:'西瓜',   emoji:'🍉', r:162, light:'#63E08B', dark:'#1F9E4E', gain:120 }
+];
+var TOP = FRUITS.length - 1;
+var DROP_POOL = [0,0,0,0,1,1,1,2,2,2,3,3,4];
+
+/* ===== 计时配置（想改时长只动这里） ===== */
+var MODE       = 'classic';   // 'classic' = 正计时不限时 ； 'timed' = 倒计时限时
+var TIME_LIMIT = 180000;      // 限时模式总时长：180000 毫秒 = 3 分钟
+var URGENT_MS  = 30000;       // 剩余 30 秒开始红色告警 + 滴答提示
+
+/* ================= DOM ================= */
+var $ = function (id) { return document.getElementById(id); };
+var wrap = $('wrap'), canvas = $('gameCanvas'), ctx = canvas.getContext('2d');
+var scoreEl = $('scoreEl'), bestEl = $('bestEl'), nextBall = $('nextBall');
+var toastEl = $('toast');
+var timeEl = $('timeEl'), timePill = $('timePill'), timeLabelEl = $('timeLabelEl');
+
+canvas.width  = LW * DPR;
+canvas.height = LH * DPR;
+ctx.scale(DPR, DPR);
+ctx.lineJoin = 'round';
+
+var cssScale = 1;
+var BAR_PX = 78;               // 底部道具卡槽高度（真实 CSS 像素）
+function layout() {
+  var w = window.innerWidth, h = window.innerHeight;
+  cssScale = Math.min(w / LW, Math.max(240, h - BAR_PX) / LH);
+  var cw = Math.floor(LW * cssScale), ch = Math.floor(LH * cssScale);
+  wrap.style.width = cw + 'px';  wrap.style.height = (ch + BAR_PX) + 'px';
+  canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px';
+}
+layout();
+window.addEventListener('resize', layout);
+
+if (typeof Matter === 'undefined') {
+  $('startScreen').style.display = 'none';
+  $('loadErr').style.display = 'flex';
+  return;
+}
+
+/* ================= 物理世界 ================= */
+var Engine = Matter.Engine, World = Matter.World, Bodies = Matter.Bodies,
+    Body = Matter.Body, Events = Matter.Events;
+
+var engine = Engine.create();
+engine.gravity.y = 1.15;
+engine.positionIterations = 10;
+engine.velocityIterations = 8;
+var world = engine.world;
+
+(function buildWalls() {
+  var t = 220, opt = { isStatic:true, friction:0.6, restitution:0 };
+  World.add(world, [
+    Bodies.rectangle(LW / 2, LH + t / 2, LW + t * 2, t, opt),
+    Bodies.rectangle(-t / 2, LH / 2, t, LH * 4, opt),
+    Bodies.rectangle(LW + t / 2, LH / 2, t, LH * 4, opt)
+  ]);
+})();
+
+/* ================= 游戏状态 ================= */
+var fruits = [];            // 场上水果刚体
+var mergeQueue = [];
+var particles = [], confetti = [], popups = [];
+var clouds = [];
+var score = 0, best = 0, biggestTier = 0;
+var currentTier = 0, nextTier = 0;
+var aimX = LW / 2, pressing = false;
+var canDrop = false, running = false, cascading = false;
+var nextReadyAt = 0;
+var combo = 0, lastMergeAt = -99999, comboShownAt = -99999;
+var dangerTimer = 0, warning = false;
+var shake = 0;
+var cascadeAt = 0, cascadeIdx = 0;
+var now = performance.now(), last = now, blinkOn = false;
+var soundOn = true;
+var paused = false;             // 物理冻结（暂停 / 抽卡时）
+var maxCombo = 0;
+var dangerGraceUntil = 0;       // 震荡卡的免死时间
+var armedJoker = false;         // 手上是不是彩虹果
+var rouletteTimer = 0;
+
+/* ---- 计时器 ---- */
+var elapsed = 0;                // 本局已用时间（毫秒），暂停/抽卡时不累加
+var timeUp = false;             // 限时模式是否已到点
+var lastTimeText = '';          // 上一次写进 DOM 的字符串，避免每帧重排
+var lastTickSec = -1;           // 最后 5 秒滴答提示用
+var warned30 = false;           // 30 秒告警只弹一次
+
+/* ---- 道具卡 ---- */
+var JR = 38;                    // 彩虹果半径
+var CARD_MAX = 5;               // 每种卡最多囤 5 张
+var CARD_STEP = 1000;            // 每 1000 分送一张
+var CARDS = [
+  { id:'vanish', icon:'💨', name:'消失卡', tip:'场上随机一种水果全部消失' },
+  { id:'reroll', icon:'🔄', name:'换果卡', tip:'立刻换掉手上这一颗' },
+  { id:'quake',  icon:'🌪', name:'震荡卡', tip:'全场晃一晃，3 秒内不判负' },
+  { id:'joker',  icon:'🌈', name:'彩虹果', tip:'下一颗碰到谁就跟谁合成' }
+];
+/* 开局赠送：彩虹果改为 0，必须靠得分抽 */
+var START_CARDS = { vanish:1, reroll:2, quake:1, joker:0 };
+
+/* ===== 彩虹果稀有度配置（想让它更稀有就把 joker 的数值调小） =====
+   抽卡时按权重随机：彩虹果 6 /（30+34+30+6）≈ 6%，原来是四选一的 25% */
+var CARD_WEIGHT = { vanish:30, reroll:34, quake:30, joker:6 };
+var CARD_CAP    = { vanish:5,  reroll:5,  quake:5,  joker:2 };  // 彩虹果最多只能囤 2 张
+var JOKER_MIN_SCORE = 1500;   // 分数不到 1500，抽卡池里根本不放彩虹果
+
+var cardCount = {};
+var nextCardAt = CARD_STEP;
+
+function cardCap(id) { return CARD_CAP[id] !== undefined ? CARD_CAP[id] : CARD_MAX; }
+
+function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+
+/* ================= 计时器 ================= */
+function fmtTime(ms, countUp) {
+  /* 正计时向下取整（0.9 秒仍是 00:00），倒计时向上取整（还剩 0.1 秒仍显示 00:01） */
+  var s = Math.max(0, countUp ? Math.floor(ms / 1000) : Math.ceil(ms / 1000));
+  var m = Math.floor(s / 60);
+  s -= m * 60;
+  return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+}
+function timeShown() {
+  return MODE === 'timed' ? Math.max(0, TIME_LIMIT - elapsed) : elapsed;
+}
+function renderTime() {
+  var left = timeShown();
+  var txt = fmtTime(left, MODE !== 'timed');
+  if (txt !== lastTimeText) { lastTimeText = txt; timeEl.textContent = txt; }
+  var urgent = (MODE === 'timed' && running && left <= URGENT_MS);
+  if (urgent) timePill.classList.add('urgent'); else timePill.classList.remove('urgent');
+}
+function updateTimer(dt) {
+  elapsed += dt;
+  if (MODE === 'timed') {
+    var left = TIME_LIMIT - elapsed;
+    if (!warned30 && left <= URGENT_MS) { warned30 = true; toast('⏰ 只剩 30 秒，抓紧合！'); }
+    /* 最后 5 秒每秒滴答一下 */
+    var sec = Math.ceil(left / 1000);
+    if (sec <= 5 && sec >= 0 && sec !== lastTickSec) { lastTickSec = sec; playTick(); }
+    if (left <= 0) { elapsed = TIME_LIMIT; renderTime(); onTimeUp(); return; }
+  }
+  renderTime();
+}
+function onTimeUp() {
+  if (!running) return;
+  timeUp = true;
+  toast('⏰ 时间到！结算中…');
+  triggerGameOver();
+}
+function easeOutBack(t) {
+  var c1 = 1.70158, c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
+/* ================= 音效（Web Audio 合成） ================= */
+var AC = null;
+function ac() {
+  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function tone(f0, f1, dur, type, vol, delay) {
+  if (!soundOn) return;
+  try {
+    var a = ac(), o = a.createOscillator(), g = a.createGain();
+    var t = a.currentTime + (delay || 0);
+    o.type = type;
+    o.frequency.setValueAtTime(f0, t);
+    if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(a.destination);
+    o.start(t); o.stop(t + dur + 0.03);
+  } catch (e) {}
+}
+function playDrop()  { tone(300, 120, 0.12, 'sine', 0.25); }
+function playLand()  { tone(160, 70, 0.09, 'sine', 0.18); }
+function playClick() { tone(650, 950, 0.07, 'sine', 0.15); }
+function playPop(tier) {
+  var base = 250 + tier * 46;
+  tone(base, base * 1.9, 0.14, 'triangle', 0.28);
+  tone(base * 2, base * 2.6, 0.1, 'sine', 0.1, 0.02);
+}
+function playMelon() {
+  [523, 659, 784, 1047].forEach(function (f, i) { tone(f, f, 0.2, 'triangle', 0.24, i * 0.11); });
+}
+function playOver() {
+  [440, 349, 262].forEach(function (f, i) { tone(f, f * 0.94, 0.28, 'sine', 0.22, i * 0.18); });
+}
+function playGain()    { [660, 880, 1100].forEach(function (f, i) { tone(f, f, 0.12, 'triangle', 0.17, i * 0.06); }); }
+function playDeny()    { tone(210, 150, 0.13, 'square', 0.09); }
+function playSwap()    { tone(520, 780, 0.08, 'square', 0.11); tone(780, 520, 0.08, 'square', 0.09, 0.08); }
+function playQuake()   { tone(95, 42, 0.45, 'sawtooth', 0.16); tone(180, 60, 0.3, 'sine', 0.14); }
+function playRainbow() { [523, 659, 784, 988, 1175].forEach(function (f, i) { tone(f, f, 0.13, 'sine', 0.15, i * 0.05); }); }
+function playTick()    { tone(900, 900, 0.028, 'square', 0.06); }
+function playWin()     { [784, 988, 1319].forEach(function (f, i) { tone(f, f, 0.18, 'triangle', 0.19, i * 0.08); }); }
+function playVanish()  { tone(760, 170, 0.34, 'sine', 0.18); }
+
+/* ================= 水果精灵（离屏预渲染） ================= */
+var SPR = [];
+
+function drawStem(g, r) {
+  g.strokeStyle = '#8A5A2B';
+  g.lineWidth = Math.max(2, r * 0.07);
+  g.lineCap = 'round';
+  g.beginPath();
+  g.moveTo(0, -r * 0.88);
+  g.quadraticCurveTo(r * 0.04, -r * 1.1, r * 0.2, -r * 1.16);
+  g.stroke();
+}
+function drawLeaf(g, r, mx) {
+  g.save();
+  g.scale(mx, 1);
+  g.translate(r * 0.1, -r * 1.0);
+  g.rotate(-0.5);
+  g.fillStyle = '#5CB85C';
+  g.beginPath();
+  g.ellipse(r * 0.2, 0, r * 0.22, r * 0.11, 0, 0, Math.PI * 2);
+  g.fill();
+  g.strokeStyle = 'rgba(40,110,40,0.5)';
+  g.lineWidth = Math.max(1, r * 0.02);
+  g.beginPath(); g.moveTo(0, 0); g.lineTo(r * 0.4, 0); g.stroke();
+  g.restore();
+}
+function topper(g, tier, r) {
+  var i;
+  switch (tier) {
+    case 0: drawStem(g, r); drawLeaf(g, r, 1); break;
+    case 1:
+      g.fillStyle = '#4FAE4E';
+      for (i = -2; i <= 2; i++) {
+        g.save(); g.translate(i * r * 0.2, -r * 0.82); g.rotate(i * 0.4);
+        g.beginPath(); g.ellipse(0, -r * 0.1, r * 0.085, r * 0.22, 0, 0, Math.PI * 2); g.fill();
+        g.restore();
+      }
+      break;
+    case 2: drawStem(g, r); break;
+    case 3:
+      g.fillStyle = FRUITS[3].dark;
+      g.beginPath(); g.ellipse(0, -r * 0.97, r * 0.15, r * 0.09, 0, 0, Math.PI * 2); g.fill();
+      drawLeaf(g, r, 1);
+      break;
+    case 4: drawLeaf(g, r, 1); break;
+    case 5: drawStem(g, r); drawLeaf(g, r, 1); break;
+    case 6: drawStem(g, r); break;
+    case 7: drawLeaf(g, r, 1); drawLeaf(g, r, -1); break;
+    case 8:
+      g.fillStyle = '#3F9E4D';
+      for (i = -2; i <= 2; i++) {
+        g.save(); g.translate(i * r * 0.13, -r * 0.86); g.rotate(i * 0.35);
+        g.beginPath(); g.moveTo(-r * 0.07, 0); g.lineTo(0, -r * 0.42); g.lineTo(r * 0.07, 0);
+        g.closePath(); g.fill();
+        g.restore();
+      }
+      break;
+    case 9: drawStem(g, r); break;
+    case 10:
+      g.strokeStyle = '#2F7A3A';
+      g.lineWidth = Math.max(2.5, r * 0.05);
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(0, -r * 0.9);
+      g.quadraticCurveTo(r * 0.08, -r * 1.12, r * 0.24, -r * 1.12);
+      g.quadraticCurveTo(r * 0.34, -r * 1.12, r * 0.34, -r * 1.02);
+      g.stroke();
+      drawLeaf(g, r, -1);
+      break;
+  }
+}
+function decor(g, tier, r) {
+  var i, a, rr, d, x, sp;
+  switch (tier) {
+    case 1: /* 草莓籽 */
+      g.fillStyle = 'rgba(255,246,190,0.95)';
+      for (i = 0; i < 10; i++) {
+        a = i * 2.39996 + 0.7;
+        rr = r * 0.72 * Math.sqrt((i + 0.6) / 10);
+        x = Math.cos(a) * rr;
+        var y = Math.sin(a) * rr + r * 0.06;
+        g.save(); g.translate(x, y); g.rotate(a);
+        g.beginPath(); g.ellipse(0, 0, r * 0.035, r * 0.06, 0, 0, Math.PI * 2); g.fill();
+        g.restore();
+      }
+      break;
+    case 2: /* 葡萄内圈 */
+      g.strokeStyle = 'rgba(255,255,255,0.30)';
+      g.lineWidth = Math.max(1.5, r * 0.045);
+      [[-0.3, -0.18], [0.32, -0.12], [0, 0.36]].forEach(function (p) {
+        g.beginPath(); g.arc(p[0] * r, p[1] * r, r * 0.40, 0, Math.PI * 2); g.stroke();
+      });
+      break;
+    case 4: /* 橙子毛孔 */
+      g.fillStyle = 'rgba(255,255,255,0.30)';
+      for (i = 0; i < 16; i++) {
+        a = i * 2.39996;
+        rr = r * 0.8 * Math.sqrt((i + 0.5) / 16);
+        g.beginPath(); g.arc(Math.cos(a) * rr, Math.sin(a) * rr, r * 0.028, 0, Math.PI * 2); g.fill();
+      }
+      break;
+    case 7: /* 桃子沟 */
+      g.strokeStyle = 'rgba(120,40,60,0.14)';
+      g.lineWidth = Math.max(2, r * 0.06);
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(-r * 0.05, -r * 0.95);
+      g.quadraticCurveTo(-r * 0.3, -r * 0.35, -r * 0.08, r * 0.2);
+      g.stroke();
+      break;
+    case 8: /* 菠萝网格 */
+      g.strokeStyle = 'rgba(150,90,10,0.22)';
+      g.lineWidth = Math.max(1.5, r * 0.03);
+      sp = r * 0.38;
+      for (d = -4; d <= 4; d++) {
+        g.beginPath(); g.moveTo(-r * 1.4, d * sp - r); g.lineTo(r * 1.4, d * sp + r); g.stroke();
+        g.beginPath(); g.moveTo(-r * 1.4, d * sp + r); g.lineTo(r * 1.4, d * sp - r); g.stroke();
+      }
+      break;
+    case 9: /* 哈密瓜网纹 */
+      g.strokeStyle = 'rgba(255,255,255,0.5)';
+      g.lineWidth = Math.max(1.2, r * 0.025);
+      for (i = 1; i <= 3; i++) {
+        g.beginPath(); g.ellipse(0, 0, r * 0.95, r * 0.3 * i, 0, 0, Math.PI * 2); g.stroke();
+        g.beginPath(); g.ellipse(0, 0, r * 0.3 * i, r * 0.95, 0, 0, Math.PI * 2); g.stroke();
+      }
+      break;
+    case 10: /* 西瓜条纹 */
+      g.strokeStyle = 'rgba(23,105,52,0.9)';
+      g.lineWidth = r * 0.15;
+      g.lineCap = 'round';
+      for (i = -2; i <= 2; i++) {
+        x = i * r * 0.42;
+        g.beginPath();
+        g.moveTo(x, -r * 1.05);
+        g.bezierCurveTo(x + r * 0.16, -r * 0.4, x - r * 0.16, r * 0.4, x, r * 1.05);
+        g.stroke();
+      }
+      break;
+  }
+}
+function face(g, tier, r, blink) {
+  var ey = -r * 0.08, ex = r * 0.34, er = Math.max(2.2, r * 0.10);
+  var eyes = [[-ex, ey], [ex, ey]];
+  if (blink) {
+    g.strokeStyle = '#4A2B18';
+    g.lineWidth = Math.max(2, er * 0.55);
+    g.lineCap = 'round';
+    eyes.forEach(function (p) {
+      g.beginPath();
+      g.moveTo(p[0] - er, p[1]);
+      g.quadraticCurveTo(p[0], p[1] + er * 0.8, p[0] + er, p[1]);
+      g.stroke();
+    });
+  } else {
+    g.fillStyle = '#4A2B18';
+    eyes.forEach(function (p) {
+      g.beginPath(); g.arc(p[0], p[1], er, 0, Math.PI * 2); g.fill();
+    });
+    g.fillStyle = 'rgba(255,255,255,0.85)';
+    eyes.forEach(function (p) {
+      g.beginPath(); g.arc(p[0] - er * 0.3, p[1] - er * 0.35, er * 0.32, 0, Math.PI * 2); g.fill();
+    });
+  }
+  g.strokeStyle = '#4A2B18';
+  g.lineWidth = Math.max(2, r * 0.045);
+  g.lineCap = 'round';
+  g.beginPath(); g.arc(0, r * 0.10, r * 0.16, 0.15 * Math.PI, 0.85 * Math.PI); g.stroke();
+  g.fillStyle = 'rgba(255,190,200,0.5)';
+  g.beginPath(); g.ellipse(-r * 0.5, r * 0.14, r * 0.11, r * 0.07, 0, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.ellipse(r * 0.5, r * 0.14, r * 0.11, r * 0.07, 0, 0, Math.PI * 2); g.fill();
+}
+function drawFruitVector(g, tier, blink) {
+  var f = FRUITS[tier], r = f.r;
+  var grad = g.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.12, 0, 0, r * 1.05);
+  grad.addColorStop(0, f.light);
+  grad.addColorStop(1, f.dark);
+  g.fillStyle = grad;
+  g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = 'rgba(0,0,0,0.08)';
+  g.lineWidth = Math.max(1.5, r * 0.03);
+  g.stroke();
+
+  g.save();
+  g.beginPath(); g.arc(0, 0, r * 0.985, 0, Math.PI * 2); g.clip();
+  decor(g, tier, r);
+  g.restore();
+
+  g.fillStyle = 'rgba(255,255,255,0.5)';
+  g.beginPath(); g.ellipse(-r * 0.38, -r * 0.42, r * 0.2, r * 0.13, -0.6, 0, Math.PI * 2); g.fill();
+  g.fillStyle = 'rgba(255,255,255,0.25)';
+  g.beginPath(); g.arc(-r * 0.15, -r * 0.55, r * 0.06, 0, Math.PI * 2); g.fill();
+
+  topper(g, tier, r);
+  face(g, tier, r, blink);
+}
+function makeSprite(tier, blink) {
+  var f = FRUITS[tier];
+  var pad = Math.ceil(f.r * 0.4) + 8;
+  var half = f.r + pad;
+  var scale = 2;
+  var c = document.createElement('canvas');
+  c.width = c.height = half * 2 * scale;
+  var g = c.getContext('2d');
+  g.scale(scale, scale);
+  g.translate(half, half);
+  drawFruitVector(g, tier, blink);
+  c._half = half;
+  return c;
+}
+(function buildSprites() {
+  for (var t = 0; t < FRUITS.length; t++) {
+    SPR[t] = { open: makeSprite(t, false), closed: makeSprite(t, true) };
+  }
+})();
+
+/* 彩虹果精灵 */
+var JSPR = null;
+function makeJokerSprite(blink) {
+  var r = JR, pad = Math.ceil(r * 0.4) + 8, half = r + pad, scale = 2;
+  var c = document.createElement('canvas');
+  c.width = c.height = half * 2 * scale;
+  var g = c.getContext('2d');
+  g.scale(scale, scale);
+  g.translate(half, half);
+  var cols = ['#FF6B6B', '#FF9E3D', '#FFE14D', '#7BD86B', '#4DC3FF', '#9B7BFF', '#FF7BD1'];
+  for (var i = 0; i < cols.length; i++) {
+    g.fillStyle = cols[i];
+    g.beginPath();
+    g.moveTo(0, 0);
+    g.arc(0, 0, r, i * Math.PI * 2 / cols.length - Math.PI / 2, (i + 1) * Math.PI * 2 / cols.length - Math.PI / 2);
+    g.closePath();
+    g.fill();
+  }
+  var gl = g.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.1, 0, 0, r * 1.05);
+  gl.addColorStop(0, 'rgba(255,255,255,0.62)');
+  gl.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gl;
+  g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = 'rgba(255,255,255,0.92)';
+  g.lineWidth = Math.max(2.5, r * 0.09);
+  g.beginPath(); g.arc(0, 0, r - r * 0.045, 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = 'rgba(0,0,0,0.08)';
+  g.lineWidth = 2;
+  g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.stroke();
+  face(g, 0, r, blink);
+  c._half = half;
+  return c;
+}
+JSPR = { open: makeJokerSprite(false), closed: makeJokerSprite(true) };
+
+/* ================= 水果生成 / 移除 ================= */
+function spawnFruit(tier, x, y, animate) {
+  var f = FRUITS[tier];
+  var b = Bodies.circle(x, y, f.r, {
+    restitution: 0.12, friction: 0.35, frictionStatic: 0.6,
+    frictionAir: 0.01, density: 0.0022
+  });
+  b.tier = tier;
+  b.bornAt = now;
+  b.squish = 0;
+  b.spawnAnim = !!animate;
+  World.add(world, b);
+  fruits.push(b);
+  return b;
+}
+function spawnJoker(x, y) {
+  var b = Bodies.circle(x, y, JR, {
+    restitution: 0.14, friction: 0.35, frictionStatic: 0.6,
+    frictionAir: 0.01, density: 0.0022
+  });
+  b.tier = -1;
+  b.joker = true;
+  b.bornAt = now;
+  b.squish = 0;
+  b.spawnAnim = true;
+  World.add(world, b);
+  fruits.push(b);
+  return b;
+}
+function removeFruit(b) {
+  if (b.removed) return;
+  b.removed = true;
+  World.remove(world, b);
+  var i = fruits.indexOf(b);
+  if (i >= 0) fruits.splice(i, 1);
+}
+
+/* ================= 碰撞与合成 ================= */
+function onCollisions(evt, isStart) {
+  var pairs = evt.pairs;
+  for (var i = 0; i < pairs.length; i++) {
+    var a = pairs[i].bodyA, b = pairs[i].bodyB;
+    if (isStart) {
+      if (a.tier !== undefined) {
+        a.squish = Math.min(0.45, Math.max(a.squish || 0, (a.speed || 0) * 0.045));
+        if (a.isDropping) { a.isDropping = false; playLand(); }
+      }
+      if (b.tier !== undefined) {
+        b.squish = Math.min(0.45, Math.max(b.squish || 0, (b.speed || 0) * 0.045));
+        if (b.isDropping) { b.isDropping = false; playLand(); }
+      }
+    }
+    if (!running || paused) continue;
+    if (a.tier === undefined || b.tier === undefined) continue;
+    if (a.merged || b.merged || a.removed || b.removed) continue;
+    if (a.joker || b.joker) {
+      /* 彩虹果：碰到谁就当成和谁同级，直接升一级 */
+      var jo = a.joker ? b : a;                 // 另一方
+      var lv = jo.joker ? 3 : jo.tier;          // 两个彩虹果 → 直接出橙子
+      a.merged = true; b.merged = true;
+      mergeQueue.push({ a: a, b: b, tier: lv });
+      continue;
+    }
+    if (a.tier !== b.tier) continue;
+    a.merged = true; b.merged = true;
+    mergeQueue.push({ a: a, b: b, tier: a.tier });
+  }
+}
+Events.on(engine, 'collisionStart',  function (e) { onCollisions(e, true);  });
+Events.on(engine, 'collisionActive', function (e) { onCollisions(e, false); });
+
+function addScore(n, x, y, color, size) {
+  score += n;
+  scoreEl.textContent = score;
+  popups.push({ x: x, y: y, txt: '+' + n, born: now, color: color || '#6B4A12',
+                size: size || (18 + Math.min(14, n / 8)) });
+  while (score >= nextCardAt) {
+    nextCardAt += CARD_STEP;
+    grantCard(null);
+  }
+}
+function burst(x, y, tier, n) {
+  var f = FRUITS[tier] || FRUITS[4];
+  for (var i = 0; i < n; i++) {
+    var a = Math.random() * Math.PI * 2;
+    var sp = 2 + Math.random() * 4.5;
+    particles.push({
+      type: 'drop', x: x, y: y,
+      vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 2.2,
+      r: 2.5 + Math.random() * 3.5,
+      c: Math.random() < 0.5 ? f.light : f.dark,
+      born: now, life: 620 + Math.random() * 260
+    });
+  }
+  for (i = 0; i < 5; i++) {
+    var a2 = Math.random() * Math.PI * 2, sp2 = 1.5 + Math.random() * 3;
+    particles.push({
+      type: 'star', x: x, y: y,
+      vx: Math.cos(a2) * sp2, vy: Math.sin(a2) * sp2 - 1.5,
+      r: 4 + Math.random() * 5,
+      c: Math.random() < 0.5 ? '#FFFFFF' : '#FFD75E',
+      rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.3,
+      born: now, life: 550
+    });
+  }
+}
+function ring(x, y, r0) {
+  particles.push({ type: 'ring', x: x, y: y, r0: r0, born: now, life: 380 });
+}
+function bigCelebrate(x, y) {
+  var colors = ['#FF595E', '#FFCA3A', '#8AC926', '#1982C4', '#6A4C93', '#FF924C'];
+  for (var i = 0; i < 70; i++) {
+    confetti.push({
+      x: x, y: y,
+      vx: (Math.random() - 0.5) * 14,
+      vy: -3 - Math.random() * 8,
+      w: 5 + Math.random() * 6, h: 3 + Math.random() * 4,
+      rot: Math.random() * Math.PI * 2, vr: (Math.random() - 0.5) * 0.4,
+      c: colors[i % colors.length],
+      born: now, life: 1900 + Math.random() * 700
+    });
+  }
+}
+function processMerges() {
+  if (!mergeQueue.length) return;
+  var q = mergeQueue.splice(0, mergeQueue.length);
+  for (var i = 0; i < q.length; i++) {
+    var m = q[i];
+    if (m.a.removed || m.b.removed) continue;
+    var x = (m.a.position.x + m.b.position.x) / 2;
+    var y = (m.a.position.y + m.b.position.y) / 2;
+    var vx = (m.a.velocity.x + m.b.velocity.x) / 2;
+    var vy = (m.a.velocity.y + m.b.velocity.y) / 2;
+    removeFruit(m.a);
+    removeFruit(m.b);
+
+    if (now - lastMergeAt < 1400) combo++; else combo = 1;
+    lastMergeAt = now;
+    if (combo >= 2) comboShownAt = now;
+    if (combo > maxCombo) maxCombo = combo;
+    if (combo === 4 || combo === 8) grantCard(null);
+    var mult = 1 + (combo - 1) * 0.25;
+
+    if (m.tier === TOP) {  /* 双西瓜同归于尽，超级加分 */
+      addScore(Math.round(300 * mult), x, y - 40, '#FF4D5E', 34);
+      bigCelebrate(x, y);
+      burst(x, y, TOP, 22);
+      playMelon();
+      shake = Math.max(shake, 14);
+      toast('双瓜合璧！全场爆炸 💥');
+      continue;
+    }
+
+    var nt = m.tier + 1;
+    var nb = spawnFruit(nt, x, y, true);
+    Body.setVelocity(nb, { x: vx * 0.4, y: Math.min(vy * 0.4, 0) });
+
+    var gain = Math.round(FRUITS[nt].gain * mult);
+    addScore(gain, x, y - FRUITS[nt].r * 0.6, nt >= 8 ? '#E07F00' : '#6B4A12');
+    burst(x, y, m.tier, 12);
+    ring(x, y, FRUITS[nt].r);
+    playPop(nt);
+
+    if (nt === TOP) {
+      bigCelebrate(x, y);
+      playMelon();
+      toast('🎉 合成大西瓜！太强了！');
+      shake = Math.max(shake, 12);
+    } else if (nt >= 8) {
+      shake = Math.max(shake, 6);
+    }
+    if (nt > biggestTier) {
+      biggestTier = nt;
+      if (nt >= 4 && nt < TOP) {
+        toast('解锁新水果 ' + FRUITS[nt].emoji + ' ' + FRUITS[nt].name + '！');
+      }
+    }
+  }
+}
+
+/* ================= 投放 ================= */
+function pickTier() {
+  return DROP_POOL[Math.floor(Math.random() * DROP_POOL.length)];
+}
+function updateNextUI() {
+  var f = FRUITS[nextTier];
+  nextBall.style.background = 'radial-gradient(circle at 32% 30%, ' + f.light + ', ' + f.dark + ')';
+  nextBall.textContent = f.emoji;
+}
+function drop() {
+  var rr = armedJoker ? JR : FRUITS[currentTier].r;
+  var x = clamp(aimX, rr + 6, LW - rr - 6);
+  var b;
+  if (armedJoker) {
+    b = spawnJoker(x, DROP_Y);
+    armedJoker = false;
+  } else {
+    b = spawnFruit(currentTier, x, DROP_Y, false);
+  }
+  b.isDropping = true;
+  playDrop();
+  canDrop = false;
+  nextReadyAt = now + 520;
+}
+
+/* ================= 危险判定 / 游戏结束 ================= */
+function updateDanger(dt) {
+  if (now < dangerGraceUntil) { dangerTimer = 0; warning = false; return; }
+  var over = false;
+  for (var i = 0; i < fruits.length; i++) {
+    var b = fruits[i];
+    if (now - b.bornAt < 500) continue;
+    if (b.position.y - b.circleRadius < DANGER_Y &&
+        (b.speed < 3 || now - b.bornAt > 1500)) { over = true; break; }
+  }
+  if (over) {
+    dangerTimer += dt;
+    warning = true;
+    if (dangerTimer > 1800) triggerGameOver();
+  } else {
+    dangerTimer = 0;
+    warning = false;
+  }
+}
+function triggerGameOver() {
+  running = false;      // 计时器随之停住
+  canDrop = false;
+  warning = false;
+  paused = false;
+  armedJoker = false;
+  renderTime();
+  closePanels();
+  best = Math.max(best, score);
+  bestEl.textContent = best;
+  playOver();
+  cascading = true;
+  cascadeAt = now + 650;
+  cascadeIdx = 0;
+}
+function updateCascade() {
+  if (now < cascadeAt) return;
+  if (!fruits.length) {
+    cascading = false;
+    showOver();
+    return;
+  }
+  var pick = fruits[0];
+  for (var i = 1; i < fruits.length; i++) {
+    var b = fruits[i];
+    if (b.tier < pick.tier || (b.tier === pick.tier && b.position.y > pick.position.y)) pick = b;
+  }
+  burst(pick.position.x, pick.position.y, pick.tier, 8);
+  tone(220 + cascadeIdx * 22, 220 + cascadeIdx * 22 + 120, 0.08, 'triangle', 0.16);
+  cascadeIdx++;
+  removeFruit(pick);
+  cascadeAt = now + 75;
+}
+function showOver() {
+  var f = FRUITS[biggestTier];
+  $('bigFruitBall').style.background = 'radial-gradient(circle at 32% 30%, ' + f.light + ', ' + f.dark + ')';
+  $('bigFruitBall').textContent = f.emoji;
+  $('bigFruitName').textContent = '最大合成 · ' + f.name;
+  $('overTitle').textContent = timeUp ? '时 间 到' : '游戏结束';
+  $('finalScoreEl').textContent = score;
+  $('finalTimeEl').textContent = fmtTime(elapsed, true);
+  $('finalComboEl').textContent = maxCombo;
+  $('finalBestEl').textContent = best;
+  $('startBestEl').textContent = best;
+  $('overScreen').style.display = 'flex';
+}
+
+/* ================= 重置开局 ================= */
+function resetGame() {
+  var list = fruits.slice();
+  for (var i = 0; i < list.length; i++) removeFruit(list[i]);
+  fruits.length = 0;
+  mergeQueue.length = 0;
+  particles.length = 0;
+  confetti.length = 0;
+  popups.length = 0;
+  score = 0; combo = 0; maxCombo = 0; biggestTier = 0;
+  dangerTimer = 0; warning = false; shake = 0;
+  dangerGraceUntil = 0;
+  cascading = false;
+  paused = false;
+  armedJoker = false;
+  closePanels();
+  resetCards();
+  lastMergeAt = -99999; comboShownAt = -99999;
+  /* 计时器归零 */
+  elapsed = 0; timeUp = false; warned30 = false; lastTickSec = -1; lastTimeText = '';
+  timeLabelEl.textContent = (MODE === 'timed' ? '倒计时' : '用时');
+  timePill.classList.remove('urgent');
+  renderTime();
+  scoreEl.textContent = '0';
+  bestEl.textContent = best;
+  currentTier = pickTier();
+  nextTier = pickTier();
+  updateNextUI();
+  aimX = LW / 2;
+  canDrop = true;
+  running = true;
+  $('pauseBtn').textContent = '⏸';
+  $('overScreen').style.display = 'none';
+}
+
+/* ================= 输入 ================= */
+function toLocalX(e) {
+  var rect = canvas.getBoundingClientRect();
+  return (e.clientX - rect.left) / cssScale;
+}
+canvas.addEventListener('pointerdown', function (e) {
+  e.preventDefault();
+  ac();
+  if (!running || paused) return;
+  pressing = true;
+  aimX = toLocalX(e);
+});
+canvas.addEventListener('pointermove', function (e) {
+  if (!running || paused) return;
+  if (pressing || e.pointerType === 'mouse') aimX = toLocalX(e);
+});
+window.addEventListener('pointerup', function () {
+  if (pressing && running && !paused && canDrop) drop();
+  pressing = false;
+});
+window.addEventListener('pointercancel', function () { pressing = false; });
+window.addEventListener('keydown', function (e) {
+  if (!running) return;
+  if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') { togglePause(); return; }
+  if (e.key >= '1' && e.key <= '4') { useCard(CARDS[+e.key - 1].id); return; }
+  if (paused) return;
+  if (e.key === 'ArrowLeft')       aimX = Math.max(0, aimX - 26);
+  else if (e.key === 'ArrowRight') aimX = Math.min(LW, aimX + 26);
+  else if (e.key === ' ' || e.key === 'ArrowDown') {
+    if (canDrop) { drop(); e.preventDefault(); }
+  }
+});
+document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+/* ================= 云朵装饰 ================= */
+(function initClouds() {
+  for (var i = 0; i < 4; i++) {
+    clouds.push({
+      x: Math.random() * LW,
+      y: 60 + Math.random() * (LH * 0.45),
+      s: 0.7 + Math.random() * 0.7,
+      spd: 5 + Math.random() * 9
+    });
+  }
+})();
+
+/* ================= 绘制 ================= */
+var FONT = '-apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+
+function drawBackground() {
+  var bg = ctx.createLinearGradient(0, 0, 0, LH);
+  bg.addColorStop(0, '#FFF7E0');
+  bg.addColorStop(0.6, '#FFEDC7');
+  bg.addColorStop(1, '#FFE0B0');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, LW, LH);
+
+  var sun = ctx.createRadialGradient(LW * 0.82, LH * 0.08, 10, LW * 0.82, LH * 0.08, 190);
+  sun.addColorStop(0, 'rgba(255,220,130,0.55)');
+  sun.addColorStop(1, 'rgba(255,220,130,0)');
+  ctx.fillStyle = sun;
+  ctx.fillRect(0, 0, LW, LH * 0.45);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  for (var i = 0; i < clouds.length; i++) {
+    var c = clouds[i];
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, 16 * c.s, 0, Math.PI * 2);
+    ctx.arc(c.x + 18 * c.s, c.y + 4 * c.s, 12 * c.s, 0, Math.PI * 2);
+    ctx.arc(c.x - 18 * c.s, c.y + 5 * c.s, 11 * c.s, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = 'rgba(180,120,50,0.10)';
+  ctx.fillRect(0, LH - 14, LW, 14);
+  var lg = ctx.createLinearGradient(0, 0, 18, 0);
+  lg.addColorStop(0, 'rgba(150,90,20,0.16)');
+  lg.addColorStop(1, 'rgba(150,90,20,0)');
+  ctx.fillStyle = lg;
+  ctx.fillRect(0, 0, 18, LH);
+  var rg = ctx.createLinearGradient(LW, 0, LW - 18, 0);
+  rg.addColorStop(0, 'rgba(150,90,20,0.16)');
+  rg.addColorStop(1, 'rgba(150,90,20,0)');
+  ctx.fillStyle = rg;
+  ctx.fillRect(LW - 18, 0, 18, LH);
+}
+function drawDangerLine() {
+  var flash = warning ? (0.5 + 0.4 * Math.sin(now / 90)) : 0.3;
+  ctx.strokeStyle = warning ? 'rgba(255,70,90,' + flash + ')' : 'rgba(200,140,60,' + flash + ')';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([10, 8]);
+  ctx.beginPath();
+  ctx.moveTo(10, DANGER_Y);
+  ctx.lineTo(LW - 10, DANGER_Y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  if (warning) {
+    var vg = ctx.createLinearGradient(0, 0, 0, 130);
+    vg.addColorStop(0, 'rgba(255,60,80,' + (0.22 + 0.14 * Math.sin(now / 90)) + ')');
+    vg.addColorStop(1, 'rgba(255,60,80,0)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, LW, 130);
+  }
+}
+function drawBody(b) {
+  var set = b.joker ? JSPR : SPR[b.tier];
+  var spr = blinkOn ? set.closed : set.open;
+  var half = spr._half;
+  var s = 1;
+  var age = now - b.bornAt;
+  if (b.spawnAnim && age < 240) s = Math.max(0.2, easeOutBack(age / 240));
+  var sq = b.squish || 0;
+  ctx.save();
+  ctx.translate(b.position.x, b.position.y);
+  ctx.scale(1 + sq * 0.35, 1 - sq * 0.3);
+  ctx.rotate(b.angle);
+  ctx.scale(s, s);
+  ctx.drawImage(spr, -half, -half, half * 2, half * 2);
+  ctx.restore();
+}
+function drawPreview() {
+  if (!running || !canDrop || paused) return;
+  var rr = armedJoker ? JR : FRUITS[currentTier].r;
+  var x = clamp(aimX, rr + 6, LW - rr - 6);
+  var bob = Math.sin(now / 300) * 3;
+  var y = DROP_Y + bob;
+
+  ctx.strokeStyle = 'rgba(120,80,20,0.16)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([4, 8]);
+  ctx.beginPath(); ctx.moveTo(x, y + rr + 4); ctx.lineTo(x, LH - 12); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.strokeStyle = 'rgba(120,80,20,0.35)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, y - rr + 3); ctx.stroke();
+
+  var pset = armedJoker ? JSPR : SPR[currentTier];
+  var spr = blinkOn ? pset.closed : pset.open;
+  var half = spr._half;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(Math.sin(now / 500) * 0.05);
+  ctx.drawImage(spr, -half, -half, half * 2, half * 2);
+  ctx.restore();
+}
+function starPath(g, r) {
+  g.beginPath();
+  for (var i = 0; i < 8; i++) {
+    var a = i * Math.PI / 4;
+    var rr = (i % 2 === 0) ? r : r * 0.4;
+    g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+  }
+  g.closePath();
+}
+function drawParticles() {
+  for (var i = 0; i < particles.length; i++) {
+    var p = particles[i];
+    var t = (now - p.born) / p.life;
+    if (t >= 1) continue;
+    if (p.type === 'ring') {
+      ctx.globalAlpha = 0.55 * (1 - t);
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 4 * (1 - t) + 1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r0 * (0.7 + t * 1.1), 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (p.type === 'star') {
+      ctx.globalAlpha = 1 - t;
+      ctx.fillStyle = p.c;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      starPath(ctx, p.r * (1 - t * 0.4));
+      ctx.fill();
+      ctx.restore();
+    } else {
+      ctx.globalAlpha = 1 - t;
+      ctx.fillStyle = p.c;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * (1 - t * 0.5), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+function drawConfetti() {
+  for (var i = 0; i < confetti.length; i++) {
+    var c = confetti[i];
+    var t = (now - c.born) / c.life;
+    if (t >= 1) continue;
+    ctx.globalAlpha = t < 0.75 ? 1 : 1 - (t - 0.75) / 0.25;
+    ctx.fillStyle = c.c;
+    ctx.save();
+    ctx.translate(c.x, c.y);
+    ctx.rotate(c.rot);
+    ctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h);
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+}
+function drawPopups() {
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (var i = 0; i < popups.length; i++) {
+    var p = popups[i];
+    var t = (now - p.born) / 900;
+    if (t >= 1) continue;
+    var y = p.y - t * 48;
+    ctx.globalAlpha = t < 0.65 ? 1 : 1 - (t - 0.65) / 0.35;
+    ctx.font = '900 ' + p.size + 'px ' + FONT;
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.strokeText(p.txt, p.x, y);
+    ctx.fillStyle = p.color;
+    ctx.fillText(p.txt, p.x, y);
+  }
+  ctx.globalAlpha = 1;
+}
+function drawCombo() {
+  if (combo < 2) return;
+  var t = (now - comboShownAt) / 900;
+  if (t >= 1) return;
+  var s = 1 + 0.45 * Math.max(0, 1 - t * 3.2);
+  ctx.save();
+  ctx.translate(LW / 2, DANGER_Y + 66);
+  ctx.scale(s, s);
+  ctx.globalAlpha = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '900 34px ' + FONT;
+  ctx.lineWidth = 7;
+  ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+  ctx.strokeText('连击 ×' + combo + '!', 0, 0);
+  ctx.fillStyle = '#FF8C1A';
+  ctx.fillText('连击 ×' + combo + '!', 0, 0);
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+function draw() {
+  ctx.save();
+  if (shake > 0.3) {
+    ctx.translate((Math.random() * 2 - 1) * shake * 0.6, (Math.random() * 2 - 1) * shake * 0.6);
+    shake *= 0.86;
+  } else {
+    shake = 0;
+  }
+  drawBackground();
+  drawDangerLine();
+  var sorted = fruits.slice().sort(function (a, b) { return b.tier - a.tier; });
+  for (var i = 0; i < sorted.length; i++) drawBody(sorted[i]);
+  drawPreview();
+  drawParticles();
+  drawConfetti();
+  drawPopups();
+  drawCombo();
+  ctx.restore();
+}
+
+/* ================= 特效更新 ================= */
+function updateFX(dt) {
+  var k = dt / 16.7, i, p;
+  for (i = particles.length - 1; i >= 0; i--) {
+    p = particles[i];
+    if (now - p.born >= p.life) { particles.splice(i, 1); continue; }
+    if (p.type !== 'ring') {
+      p.x += p.vx * k;
+      p.y += p.vy * k;
+      p.vy += 0.16 * k;
+      if (p.rot !== undefined) p.rot += p.vr * k;
+    }
+  }
+  for (i = confetti.length - 1; i >= 0; i--) {
+    p = confetti[i];
+    if (now - p.born >= p.life) { confetti.splice(i, 1); continue; }
+    p.x += p.vx * k;
+    p.y += p.vy * k;
+    p.vy += 0.18 * k;
+    p.vx *= Math.pow(0.99, k);
+    p.rot += p.vr * k;
+  }
+  for (i = popups.length - 1; i >= 0; i--) {
+    if (now - popups[i].born >= 900) popups.splice(i, 1);
+  }
+  for (i = 0; i < fruits.length; i++) {
+    if (fruits[i].squish > 0.002) fruits[i].squish *= Math.pow(0.86, k);
+  }
+  for (i = 0; i < clouds.length; i++) {
+    clouds[i].x += clouds[i].spd * dt / 1000;
+    if (clouds[i].x > LW + 45) clouds[i].x = -45;
+  }
+}
+
+/* ================= 主循环 ================= */
+function loop(t) {
+  requestAnimationFrame(loop);
+  now = t;
+  var dt = Math.min(50, t - last);
+  last = t;
+  blinkOn = (t % 3400) < 130;
+
+  if ((running && !paused) || cascading) Engine.update(engine, 1000 / 60);
+  if (running && !paused) {
+    updateTimer(dt);
+    if (!running) { updateFX(dt); draw(); return; }   // 时间到，本帧收尾
+    processMerges();
+    updateDanger(dt);
+    if (!canDrop && t >= nextReadyAt) {
+      canDrop = true;
+      currentTier = nextTier;
+      nextTier = pickTier();
+      updateNextUI();
+    }
+  }
+  if (cascading) updateCascade();
+  updateFX(dt);
+  draw();
+}
+requestAnimationFrame(loop);
+
+/* ================= 道具卡系统 ================= */
+function findCard(id) {
+  for (var i = 0; i < CARDS.length; i++) if (CARDS[i].id === id) return CARDS[i];
+  return null;
+}
+function buildCardBar() {
+  var bar = $('cardBar');
+  bar.innerHTML = '';
+  CARDS.forEach(function (c, idx) {
+    var b = document.createElement('button');
+    b.className = 'itemCard';
+    b.id = 'card_' + c.id;
+    b.title = c.name + '：' + c.tip + '（快捷键 ' + (idx + 1) + '）';
+    b.innerHTML = '<span class="key">' + (idx + 1) + '</span>' +
+                  '<span class="ic">' + c.icon + '</span>' +
+                  '<span class="nm">' + c.name + '</span>' +
+                  '<span class="cnt">0</span>';
+    b.addEventListener('click', function () { ac(); useCard(c.id); });
+    bar.appendChild(b);
+  });
+}
+function updateCardUI() {
+  for (var i = 0; i < CARDS.length; i++) {
+    var c = CARDS[i], el = $('card_' + c.id);
+    if (!el) continue;
+    var n = cardCount[c.id] || 0;
+    el.querySelector('.cnt').textContent = n;
+    if (n <= 0) el.classList.add('dim'); else el.classList.remove('dim');
+  }
+}
+function resetCards() {
+  cardCount = {};
+  for (var k in START_CARDS) cardCount[k] = START_CARDS[k];
+  nextCardAt = CARD_STEP;
+  updateCardUI();
+}
+function grantCard(id) {
+  if (!id) {
+    /* 按权重抽：彩虹果权重最低，且要先到 JOKER_MIN_SCORE 才进池 */
+    var pool = [], sum = 0, i, cd, w;
+    for (i = 0; i < CARDS.length; i++) {
+      cd = CARDS[i];
+      if ((cardCount[cd.id] || 0) >= cardCap(cd.id)) continue;
+      if (cd.id === 'joker' && score < JOKER_MIN_SCORE) continue;
+      w = CARD_WEIGHT[cd.id] || 1;
+      pool.push({ id: cd.id, w: w });
+      sum += w;
+    }
+    if (!pool.length) return;
+    var r = Math.random() * sum, acc = 0;
+    id = pool[pool.length - 1].id;
+    for (i = 0; i < pool.length; i++) {
+      acc += pool[i].w;
+      if (r < acc) { id = pool[i].id; break; }
+    }
+  }
+  if ((cardCount[id] || 0) >= cardCap(id)) return;
+  cardCount[id] = (cardCount[id] || 0) + 1;
+  updateCardUI();
+  var el = $('card_' + id);
+  if (el) { el.classList.remove('gain'); void el.offsetWidth; el.classList.add('gain'); }
+  var c = findCard(id);
+  if (id === 'joker') {
+    toast('🌈 稀有！抽到彩虹果');
+    playRainbow();
+  } else {
+    toast('获得道具卡 ' + c.icon + ' ' + c.name);
+    playGain();
+  }
+}
+function useCard(id) {
+  if (!running || cascading) return;
+  if (paused) return;
+  if ((cardCount[id] || 0) <= 0) { toast('这张卡用完啦，继续得分还会送'); playDeny(); return; }
+  var ok = false;
+  if (id === 'vanish')      ok = doVanish();
+  else if (id === 'reroll') ok = doReroll();
+  else if (id === 'quake')  ok = doQuake();
+  else if (id === 'joker')  ok = doJoker();
+  if (ok) { cardCount[id]--; updateCardUI(); }
+}
+
+/* ---- 💨 消失卡：权重随合成难度递减（每高一级，概率减半） ---- */
+function vanishTable() {
+  var counts = {}, i, t;
+  for (i = 0; i < fruits.length; i++) {
+    if (fruits[i].joker) continue;
+    t = fruits[i].tier;
+    counts[t] = (counts[t] || 0) + 1;
+  }
+  var list = [], sum = 0;
+  for (var k in counts) {
+    var tt = parseInt(k, 10);
+    var w = Math.pow(0.5, tt);          // 合成难度每高一级翻一倍 → 权重减半
+    list.push({ tier: tt, count: counts[k], w: w });
+    sum += w;
+  }
+  list.sort(function (a, b) { return a.tier - b.tier; });
+  for (i = 0; i < list.length; i++) list[i].p = list[i].w / sum;
+  return list;
+}
+function weightedPick(list) {
+  var r = Math.random(), acc = 0;
+  for (var i = 0; i < list.length; i++) {
+    acc += list[i].p;
+    if (r <= acc) return i;
+  }
+  return list.length - 1;
+}
+function doVanish() {
+  var list = vanishTable();
+  if (!list.length) { toast('场上还没有水果，先放几颗吧'); playDeny(); return false; }
+  paused = true;
+  pressing = false;
+  showRoulette(list);
+  return true;
+}
+function showRoulette(list) {
+  var box = $('rouletteList');
+  box.innerHTML = '';
+  list.forEach(function (o) {
+    var f = FRUITS[o.tier];
+    var row = document.createElement('div');
+    row.className = 'rRow';
+    row.innerHTML =
+      '<span class="rBall" style="background:radial-gradient(circle at 32% 30%,' + f.light + ',' + f.dark + ')">' + f.emoji + '</span>' +
+      '<span class="rName">' + f.name + '</span>' +
+      '<span class="rBarWrap"><span class="rBar" style="width:' + Math.max(2, o.p * 100).toFixed(1) + '%"></span></span>' +
+      '<span class="rPct">' + (o.p * 100).toFixed(1) + '%</span>';
+    box.appendChild(row);
+  });
+  $('rouletteResult').textContent = '抽取中…';
+  $('rouletteScreen').style.display = 'flex';
+
+  var rows = box.children;
+  var winIdx = weightedPick(list);
+  var total = list.length * 2 + winIdx + 1;      // 保证最后一步正好停在 winIdx
+  if (list.length === 1) total = 3;
+  var step = 0;
+
+  function tick() {
+    for (var k = 0; k < rows.length; k++) rows[k].classList.remove('hit');
+    rows[step % rows.length].classList.add('hit');
+    playTick();
+    step++;
+    if (step >= total) { rouletteTimer = setTimeout(land, 260); return; }
+    rouletteTimer = setTimeout(tick, 55 + Math.pow(step / total, 3) * 210);
+  }
+  function land() {
+    for (var k = 0; k < rows.length; k++) rows[k].classList.remove('hit');
+    if (rows[winIdx]) rows[winIdx].classList.add('win');
+    var o = list[winIdx], f = FRUITS[o.tier];
+    $('rouletteResult').textContent = '抽中 ' + f.emoji + ' ' + f.name + ' ×' + o.count;
+    playWin();
+    rouletteTimer = setTimeout(function () {
+      $('rouletteScreen').style.display = 'none';
+      paused = false;
+      vanishTier(o.tier);
+    }, 780);
+  }
+  rouletteTimer = setTimeout(tick, 220);
+}
+function vanishTier(t) {
+  var doomed = [], i;
+  for (i = 0; i < fruits.length; i++) {
+    if (!fruits[i].joker && fruits[i].tier === t) doomed.push(fruits[i]);
+  }
+  if (!doomed.length) return;
+  var f = FRUITS[t];
+  var per = Math.max(1, Math.round(f.gain * 0.5));
+  var cx = 0, cy = 0;
+  for (i = 0; i < doomed.length; i++) { cx += doomed[i].position.x; cy += doomed[i].position.y; }
+  cx /= doomed.length; cy /= doomed.length;
+
+  playVanish();
+  shake = Math.max(shake, 9);
+  addScore(per * doomed.length, cx, cy - 30, '#2FA3C7', 26);
+  toast('💨 ' + f.emoji + ' ' + f.name + ' ×' + doomed.length + ' 全部消失！');
+
+  doomed.forEach(function (b, k) {
+    setTimeout(function () {
+      if (b.removed) return;
+      burst(b.position.x, b.position.y, t, 12);
+      ring(b.position.x, b.position.y, f.r * 0.95);
+      tone(560 - k * 12, 220, 0.09, 'sine', 0.12);
+      removeFruit(b);
+    }, k * 70);
+  });
+}
+
+/* ---- 🔄 换果卡 ---- */
+function doReroll() {
+  if (armedJoker) { toast('彩虹果先放下去再换'); playDeny(); return false; }
+  if (!canDrop) { toast('等这一颗落下再换'); playDeny(); return false; }
+  var t = currentTier, guard = 0;
+  while (t === currentTier && guard++ < 20) t = pickTier();
+  currentTier = t;
+  armedJoker = false;
+  playSwap();
+  toast('换成了 ' + FRUITS[currentTier].emoji + ' ' + FRUITS[currentTier].name);
+  return true;
+}
+
+/* ---- 🌪 震荡卡 ---- */
+function doQuake() {
+  if (!fruits.length) { toast('场上还没有水果，先放几颗吧'); playDeny(); return false; }
+  for (var i = 0; i < fruits.length; i++) {
+    var b = fruits[i];
+    Body.setVelocity(b, {
+      x: (Math.random() - 0.5) * 9,
+      y: -(1.4 + Math.random() * 3.4)
+    });
+    Body.setAngularVelocity(b, (Math.random() - 0.5) * 0.26);
+    b.squish = Math.max(b.squish || 0, 0.22);
+  }
+  shake = Math.max(shake, 17);
+  dangerTimer = 0;
+  dangerGraceUntil = now + 3000;
+  playQuake();
+  toast('🌪 天摇地动！3 秒内不判负');
+  return true;
+}
+
+/* ---- 🌈 彩虹果卡 ---- */
+function doJoker() {
+  if (armedJoker) { toast('彩虹果已经在手上啦'); playDeny(); return false; }
+  if (!canDrop) { toast('等这一颗落下再用'); playDeny(); return false; }
+  armedJoker = true;
+  playRainbow();
+  toast('🌈 彩虹果上手！碰到谁就跟谁合成');
+  return true;
+}
+
+/* ================= 暂停 ================= */
+function closePanels() {
+  clearTimeout(rouletteTimer);
+  $('rouletteScreen').style.display = 'none';
+  $('pauseScreen').style.display = 'none';
+}
+function togglePause() {
+  if (!running || cascading) return;
+  if ($('rouletteScreen').style.display === 'flex') return;   // 抽卡动画中不许暂停
+  paused = !paused;
+  pressing = false;
+  $('pauseScreen').style.display = paused ? 'flex' : 'none';
+  $('pauseBtn').textContent = paused ? '▶' : '⏸';
+  playClick();
+}
+
+/* ================= 界面交互 ================= */
+var toastTimer = 0;
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 1700);
+}
+
+(function buildChain() {
+  var chain = $('chain');
+  for (var i = 0; i < FRUITS.length; i++) {
+    var f = FRUITS[i];
+    var d = document.createElement('span');
+    d.className = 'cb';
+    var sz = 20 + i * 1.6;
+    d.style.width = sz + 'px';
+    d.style.height = sz + 'px';
+    d.style.fontSize = (sz * 0.55) + 'px';
+    d.style.background = 'radial-gradient(circle at 32% 30%, ' + f.light + ', ' + f.dark + ')';
+    d.textContent = f.emoji;
+    chain.appendChild(d);
+    if (i < FRUITS.length - 1) {
+      var ar = document.createElement('span');
+      ar.className = 'arrow';
+      ar.textContent = '›';
+      chain.appendChild(ar);
+    }
+  }
+})();
+
+/* ---- 开始页：模式选择 ---- */
+function setMode(m) {
+  MODE = m;
+  var btns = document.querySelectorAll('.modeBtn'), i;
+  for (i = 0; i < btns.length; i++) {
+    if (btns[i].getAttribute('data-mode') === m) btns[i].classList.add('active');
+    else btns[i].classList.remove('active');
+  }
+}
+(function bindModes() {
+  var btns = document.querySelectorAll('.modeBtn'), i;
+  for (i = 0; i < btns.length; i++) {
+    (function (b) {
+      b.addEventListener('click', function () {
+        ac(); playClick();
+        setMode(b.getAttribute('data-mode'));
+      });
+    })(btns[i]);
+  }
+})();
+
+/* ---- 开始页：玩法 / 道具 / 图鉴 分栏 ---- */
+(function bindTabs() {
+  var tabs = document.querySelectorAll('.tab'), i;
+  for (i = 0; i < tabs.length; i++) {
+    (function (t) {
+      t.addEventListener('click', function () {
+        playClick();
+        var all = document.querySelectorAll('.tab'),
+            panes = document.querySelectorAll('.tabPane'), k;
+        for (k = 0; k < all.length; k++) all[k].classList.remove('active');
+        t.classList.add('active');
+        for (k = 0; k < panes.length; k++) panes[k].classList.remove('show');
+        var p = $(t.getAttribute('data-tab'));
+        if (p) p.classList.add('show');
+      });
+    })(tabs[i]);
+  }
+})();
+
+function showHome() {
+  closePanels();
+  $('overScreen').style.display = 'none';
+  $('startBestEl').textContent = best;
+  $('startScreen').style.display = 'flex';
+}
+
+$('startBtn').addEventListener('click', function () {
+  ac();
+  playClick();
+  $('startScreen').style.display = 'none';
+  resetGame();
+});
+$('homeBtn').addEventListener('click', function () {
+  playClick();
+  showHome();
+});
+$('againBtn').addEventListener('click', function () {
+  playClick();
+  resetGame();
+});
+$('restartBtn').addEventListener('click', function () {
+  playClick();
+  if ($('startScreen').style.display === 'none') resetGame();
+});
+$('soundBtn').addEventListener('click', function () {
+  soundOn = !soundOn;
+  $('soundBtn').textContent = soundOn ? '🔊' : '🔇';
+  if (soundOn) playClick();
+});
+$('pauseBtn').addEventListener('click', function () { togglePause(); });
+$('resumeBtn').addEventListener('click', function () { togglePause(); });
+$('quitBtn').addEventListener('click', function () {
+  playClick();
+  resetGame();
+});
+document.addEventListener('visibilitychange', function () {
+  if (document.hidden && running && !paused && $('rouletteScreen').style.display !== 'flex') togglePause();
+});
+
+buildCardBar();
+resetCards();
+updateNextUI();
+renderTime();
+$('startBestEl').textContent = best;
+})();
+</script>
+</body>
+</html>
