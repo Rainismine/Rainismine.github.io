@@ -5,553 +5,354 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="description" content="rainward 的精选作品——工具与游戏，每一个都经过打磨。" />
-<meta name="theme-color" content="#07080c" />
+<meta name="theme-color" content="#f5f5f7" />
 <title>rainward · 精选作品</title>
 <style>
-  /* ═══════════════ 基础 ═══════════════ */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #07080c;
-    --panel: rgba(16, 19, 26, .62);
-    --line: rgba(255,255,255,.065);
-    --line-strong: rgba(255,255,255,.12);
-    --text: #e9edf4;
-    --muted: #8f99a8;
-    --muted-2: #525c6a;
-    --accent: #6fd6ff;
-    --accent-2: #b79cff;
-    --accent-warm: #ffb26b;
-    --accent-leaf: #7ddba3;
-    --serif: Georgia, 'Times New Roman', 'Songti SC', 'Noto Serif SC', 'SimSun', serif;
-    --sans: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', system-ui, -apple-system, 'Segoe UI', sans-serif;
-    --mono: 'SF Mono', 'Cascadia Mono', 'JetBrains Mono', Consolas, ui-monospace, monospace;
-    --ease: cubic-bezier(.22, 1, .36, 1);
+    --bg: #ffffff;
+    --section: #f5f5f7;
+    --ink: #1d1d1f;
+    --gray: #6e6e73;
+    --gray-2: #86868b;
+    --hairline: #d2d2d7;
+    --blue: #0066cc;
+    --font: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Segoe UI', sans-serif;
   }
   html { scroll-behavior: smooth; }
   body {
-    font-family: var(--sans);
+    font-family: var(--font);
     background: var(--bg);
-    color: var(--text);
+    color: var(--ink);
     min-height: 100vh;
     display: flex; flex-direction: column;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     overflow-x: hidden;
   }
-  ::selection { background: rgba(111,214,255,.22); color: #fff; }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-  ::-webkit-scrollbar { width: 9px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: #1c2230; border-radius: 5px; border: 2px solid var(--bg); }
-  ::-webkit-scrollbar-thumb:hover { background: #2a3346; }
+  ::selection { background: rgba(0,102,204,.18); }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
 
-  /* ── 氛围层：光晕 / 发丝网格 / 噪点 ── */
-  .atmosphere { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-  .atmosphere .glow {
-    position: absolute; border-radius: 50%; filter: blur(90px);
-    animation: breathe 14s ease-in-out infinite;
-  }
-  .glow-1 { width: 720px; height: 420px; top: -180px; right: -120px; background: rgba(111,214,255,.075); }
-  .glow-2 { width: 620px; height: 400px; bottom: -160px; left: -140px; background: rgba(183,156,255,.06); animation-delay: -7s; }
-  .glow-3 { width: 380px; height: 260px; top: 42%; left: 52%; background: rgba(255,178,107,.035); animation-delay: -3.5s; }
-  @keyframes breathe { 0%,100% { opacity: .7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.07); } }
-  .grid-lines {
-    position: absolute; inset: 0;
-    background:
-      linear-gradient(to right, rgba(255,255,255,.028) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,.028) 1px, transparent 1px);
-    background-size: 72px 72px;
-    -webkit-mask-image: radial-gradient(ellipse 90% 62% at 50% 8%, #000 25%, transparent 72%);
-    mask-image: radial-gradient(ellipse 90% 62% at 50% 8%, #000 25%, transparent 72%);
-  }
-  .noise {
-    position: absolute; inset: 0; opacity: .05; mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
-  }
-
-  /* ═══════════════ 导航 ═══════════════ */
+  /* ══════════ 导航（半透明毛玻璃，Apple 风格）══════════ */
   .nav {
-    position: sticky; top: 0; z-index: 50;
-    display: flex; align-items: center; gap: 18px;
-    height: 62px; padding: 0 30px;
-    background: rgba(7,8,12,.72);
-    backdrop-filter: blur(18px) saturate(1.4);
-    -webkit-backdrop-filter: blur(18px) saturate(1.4);
-    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 100;
+    height: 48px;
+    background: rgba(251,251,253,.8);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--hairline);
   }
-  .nav::after {
-    content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
-    background: linear-gradient(90deg, transparent 4%, rgba(111,214,255,.35) 50%, transparent 96%);
-    opacity: .5;
+  .nav-inner {
+    max-width: 1024px; height: 100%;
+    margin: 0 auto; padding: 0 22px;
+    display: flex; align-items: center; gap: 34px;
   }
-  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); }
-  .brand .mark {
-    width: 30px; height: 30px; border-radius: 9px;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-    display: grid; place-items: center;
-    font-family: var(--mono); font-size: 13px; font-weight: 700; color: #081018;
-    box-shadow: 0 0 20px rgba(111,214,255,.28), inset 0 1px 0 rgba(255,255,255,.5);
+  .brand { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: var(--ink); letter-spacing: -.01em; }
+  .brand svg { display: block; }
+  .brand:hover { text-decoration: none; }
+  .nav-links { display: flex; gap: 30px; margin-left: auto; }
+  .nav-links a {
+    font-size: 12px; color: rgba(0,0,0,.8);
+    transition: color .2s;
   }
-  .brand .name { font-size: 15px; font-weight: 600; letter-spacing: .01em; }
-  .brand .tag { font-family: var(--mono); font-size: 8.5px; letter-spacing: .22em; color: var(--muted-2); text-transform: uppercase; margin-top: 1px; }
-  .nav-spacer { flex: 1; }
-  .clock {
-    font-family: var(--mono); font-size: 10.5px; color: var(--muted-2); letter-spacing: .08em;
-    display: flex; align-items: center; gap: 7px;
-    border: 1px solid var(--line); border-radius: 999px; padding: 5px 13px;
-    background: rgba(255,255,255,.015);
+  .nav-links a:hover { color: var(--ink); }
+
+  /* ══════════ Hero ══════════ */
+  .hero { text-align: center; padding: 88px 24px 72px; }
+  .hero h1 {
+    font-size: clamp(48px, 7.5vw, 84px);
+    font-weight: 700;
+    letter-spacing: -.022em;
+    line-height: 1.1;
+    color: var(--ink);
   }
-  .clock .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-leaf); box-shadow: 0 0 7px var(--accent-leaf); animation: pulse 2.4s ease-in-out infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
-  .nav-link {
-    font-size: 12px; color: var(--muted); text-decoration: none;
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 6px 4px; position: relative;
+  .hero h1 .period { color: var(--gray-2); }
+  .hero .sub {
+    margin-top: 18px;
+    font-size: clamp(19px, 2.6vw, 27px);
+    font-weight: 400;
+    color: var(--gray);
+    letter-spacing: .01em;
+  }
+
+  /* ══════════ 内容区（#f5f5f7 灰阶段）══════════ */
+  .section {
+    background: var(--section);
+    padding: 56px 24px 88px;
+    text-align: center;
+    flex: 1;
+  }
+  /* iOS 风格分段切换器 */
+  .segmented {
+    position: relative;
+    display: inline-flex;
+    background: #e8e8ed;
+    border-radius: 999px;
+    padding: 2px;
+  }
+  .segmented button {
+    position: relative; z-index: 2;
+    border: 0; background: transparent; cursor: pointer;
+    font-family: var(--font); font-size: 14px; font-weight: 500;
+    color: var(--ink);
+    padding: 7px 34px; border-radius: 999px;
+    white-space: nowrap;
     transition: color .25s;
   }
-  .nav-link::after {
-    content: ''; position: absolute; left: 0; right: 100%; bottom: 2px; height: 1px;
-    background: var(--accent); transition: right .3s var(--ease);
-  }
-  .nav-link:hover { color: var(--text); }
-  .nav-link:hover::after { right: 0; }
-  .nav-link .arrow { font-size: 10px; opacity: .6; transition: transform .25s; }
-  .nav-link:hover .arrow { transform: translate(2px, -2px); opacity: 1; }
-  .nav-sep { width: 1px; height: 18px; background: var(--line-strong); }
-
-  /* ═══════════════ Hero ═══════════════ */
-  .hero { position: relative; padding: 96px 30px 56px; text-align: center; z-index: 1; }
-  .eyebrow {
-    display: inline-flex; align-items: center; gap: 14px;
-    font-family: var(--mono); font-size: 9.5px; letter-spacing: .34em; text-transform: uppercase;
-    color: var(--accent); margin-bottom: 26px;
-  }
-  .eyebrow::before, .eyebrow::after { content: ''; width: 34px; height: 1px; background: linear-gradient(90deg, transparent, rgba(111,214,255,.6)); }
-  .eyebrow::after { background: linear-gradient(90deg, rgba(111,214,255,.6), transparent); }
-  .hero h1 {
-    font-family: var(--serif); font-weight: 400;
-    font-size: clamp(46px, 7.2vw, 82px); line-height: 1.12; letter-spacing: .02em;
-  }
-  .hero h1 .char {
-    display: inline-block; opacity: 0; transform: translateY(.4em); filter: blur(8px);
-    animation: char-in .8s var(--ease) forwards;
-  }
-  @keyframes char-in { to { opacity: 1; transform: none; filter: none; } }
-  .hero h1 .grad {
-    background: linear-gradient(118deg, #f5f8fb 18%, var(--accent) 52%, var(--accent-2) 88%);
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-  }
-  .hero h1 .punct { color: var(--accent); }
-  .hero .sub {
-    margin-top: 22px; font-size: 14px; color: var(--muted); letter-spacing: .05em;
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-  }
-  .hero .sub .hair { width: 44px; height: 1px; background: var(--line-strong); }
-  .hero-meta {
-    margin-top: 30px; display: flex; justify-content: center; gap: 26px;
-    font-family: var(--mono); font-size: 10px; color: var(--muted-2); letter-spacing: .1em;
-  }
-  .hero-meta b { color: var(--muted); font-weight: 500; }
-
-  /* ── 跑马灯 ── */
-  .marquee {
-    position: relative; z-index: 1;
-    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
-    padding: 13px 0; overflow: hidden;
-    background: rgba(255,255,255,.012);
-  }
-  .marquee-track {
-    display: flex; gap: 56px; width: max-content;
-    animation: scroll-x 36s linear infinite;
-  }
-  .marquee:hover .marquee-track { animation-play-state: paused; }
-  .marquee-track span {
-    font-family: var(--mono); font-size: 10px; letter-spacing: .3em; text-transform: uppercase;
-    color: var(--muted-2); white-space: nowrap;
-    display: inline-flex; align-items: center; gap: 56px;
-  }
-  .marquee-track span::after { content: '✦'; font-size: 8px; color: rgba(111,214,255,.45); }
-  @keyframes scroll-x { to { transform: translateX(-50%); } }
-
-  /* ═══════════════ 内容区 ═══════════════ */
-  .section { position: relative; z-index: 1; flex: 1; width: 100%; max-width: 1060px; margin: 0 auto; padding: 64px 30px 96px; }
-  .section-head { display: flex; align-items: center; gap: 16px; margin-bottom: 34px; }
-  .section-index {
-    font-family: var(--mono); font-size: 10px; color: var(--muted-2); letter-spacing: .18em;
-    border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px;
-  }
-  .tabs { position: relative; display: flex; border: 1px solid var(--line-strong); border-radius: 999px; padding: 4px; background: rgba(255,255,255,.02); }
-  .tab {
-    position: relative; z-index: 2;
-    border: 0; background: transparent; color: var(--muted);
-    font-size: 13px; font-family: var(--sans); font-weight: 500;
-    padding: 8px 26px; border-radius: 999px; cursor: pointer;
-    display: flex; align-items: center; gap: 9px;
-    transition: color .3s;
-    white-space: nowrap;
-  }
-  .tab:hover { color: var(--text); }
-  .tab.active { color: var(--text); }
-  .tab kbd {
-    font-family: var(--mono); font-size: 8.5px; color: var(--muted-2);
-    border: 1px solid var(--line-strong); border-radius: 4px; padding: 1px 5px;
-    transition: all .3s;
-  }
-  .tab.active kbd { color: var(--accent); border-color: rgba(111,214,255,.35); }
-  .tab-indicator {
-    position: absolute; z-index: 1; top: 4px; bottom: 4px; left: 0; width: 0;
+  .segmented .thumb {
+    position: absolute; z-index: 1; top: 2px; bottom: 2px; left: 2px; width: 0;
+    background: #ffffff;
     border-radius: 999px;
-    background: linear-gradient(135deg, rgba(111,214,255,.14), rgba(183,156,255,.14));
-    box-shadow: inset 0 0 0 1px rgba(111,214,255,.32), 0 2px 14px rgba(111,214,255,.12);
-    transition: left .38s var(--ease), width .38s var(--ease);
+    box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 0 1px rgba(0,0,0,.04);
+    transition: left .32s cubic-bezier(.33, 1, .4, 1), width .32s cubic-bezier(.33, 1, .4, 1);
   }
-  .count-pill {
-    margin-left: auto;
-    font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: .08em;
-    border: 1px solid var(--line); border-radius: 999px; padding: 5px 14px;
-    background: rgba(255,255,255,.015);
-  }
-  .count-pill b { color: var(--accent); font-weight: 500; }
 
-  /* ── 面板与卡片 ── */
+  /* 产品卡片 */
   .panel { display: none; }
-  .panel.active { display: block; animation: panel-in .5s var(--ease); }
-  @keyframes panel-in { from { opacity: 0; transform: translateY(16px); filter: blur(5px); } to { opacity: 1; transform: none; filter: none; } }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 22px; }
+  .panel.active { display: block; animation: panel-in .5s cubic-bezier(.25,.6,.3,1); }
+  @keyframes panel-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 
-  .card {
-    position: relative; display: block; text-decoration: none; color: inherit;
-    background: var(--panel);
-    backdrop-filter: blur(16px) saturate(1.3);
-    -webkit-backdrop-filter: blur(16px) saturate(1.3);
-    border: 1px solid var(--line); border-radius: 18px;
-    overflow: hidden; isolation: isolate;
-    transition: transform .4s var(--ease), border-color .4s, box-shadow .4s;
+  .tile { max-width: 900px; margin: 40px auto 0; }
+  .badge {
+    display: inline-block;
+    font-size: 12px; font-weight: 600;
+    color: #f56300; background: #ffe9d9;
+    border-radius: 999px; padding: 3px 12px;
+    margin-bottom: 12px;
   }
-  .card::before {
-    content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
-    border-radius: 18px; padding: 1px;
-    background: linear-gradient(140deg, rgba(111,214,255,.55), transparent 34%, transparent 68%, rgba(183,156,255,.45));
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude;
-    opacity: 0; transition: opacity .45s;
+  .tile h2 {
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 700;
+    letter-spacing: -.015em;
+    line-height: 1.15;
   }
-  .card::after {
-    content: ''; position: absolute; z-index: 2; top: -60%; bottom: -60%; left: -70%; width: 55%;
-    background: linear-gradient(105deg, transparent, rgba(255,255,255,.06), transparent);
-    transform: skewX(-18deg); pointer-events: none;
-    transition: left .8s var(--ease);
+  .tile .tagline {
+    margin: 12px auto 0;
+    max-width: 540px;
+    font-size: 17px; line-height: 1.55;
+    color: var(--gray);
   }
-  .card:hover { transform: translateY(-7px); box-shadow: 0 30px 70px rgba(0,0,0,.55), 0 0 44px rgba(111,214,255,.06); }
-  .card:hover::before { opacity: 1; }
-  .card:hover::after { left: 130%; }
+  .tile .links {
+    margin-top: 22px;
+    display: flex; justify-content: center; gap: 34px;
+    font-size: 17px;
+  }
+  .tile .links a { color: var(--blue); }
+  .tile .links a .chev { display: inline-block; transition: transform .2s; }
+  .tile .links a:hover .chev { transform: translateX(2px); }
 
-  /* 卡片视觉区 */
-  .card-art {
-    position: relative; height: 168px;
-    display: grid; place-items: center; overflow: hidden;
-    background: radial-gradient(300px 130px at 50% -18%, rgba(111,214,255,.16), transparent 70%), radial-gradient(260px 120px at 12% 118%, rgba(183,156,255,.13), transparent 72%), #0c0f16;
-    border-bottom: 1px solid var(--line);
+  /* 视觉区 */
+  .visual {
+    margin: 44px auto 0;
+    max-width: 900px;
+    border-radius: 28px;
+    overflow: hidden;
+    display: grid; place-items: center;
   }
-  .card-art::before, .card-art::after {
-    content: '+'; position: absolute; font-family: var(--mono); font-size: 12px; color: var(--muted-2); opacity: .7;
-  }
-  .card-art::before { top: 10px; left: 12px; }
-  .card-art::after { bottom: 10px; right: 12px; }
-  .card-art .num {
-    position: absolute; top: 10px; right: 12px;
-    font-family: var(--mono); font-size: 9px; letter-spacing: .14em; color: var(--muted-2);
-    border: 1px solid var(--line-strong); border-radius: 6px; padding: 3px 8px;
-  }
-  .card-art svg { position: relative; transition: transform .5s var(--ease); }
-  .card:hover .card-art svg { transform: scale(1.06) rotate(-1deg); }
-  .card-art .float { animation: floaty 5.5s ease-in-out infinite; }
-  .card-art .float.d2 { animation-delay: -2.7s; }
-  @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
-  .card-art.watermelon {
-    background: radial-gradient(300px 130px at 50% -18%, rgba(255,178,107,.17), transparent 70%), radial-gradient(260px 120px at 88% 118%, rgba(125,219,163,.12), transparent 72%), #100d09;
-  }
+  .visual svg { display: block; max-width: 92%; height: auto; transition: transform .6s cubic-bezier(.25,.6,.3,1); }
+  .visual:hover svg { transform: scale(1.03); }
+  .visual.resume { background: linear-gradient(180deg, #eaf3fd 0%, #f7f9fc 100%); }
+  .visual.watermelon { background: linear-gradient(180deg, #fdf1e4 0%, #faf8f3 100%); }
 
-  /* 卡片正文 */
-  .card-body { padding: 20px 22px 22px; }
-  .card-title-row { display: flex; align-items: baseline; gap: 12px; margin-bottom: 9px; }
-  .card-title { font-family: var(--serif); font-size: 20px; font-weight: 400; letter-spacing: .01em; }
-  .card-type {
-    font-family: var(--mono); font-size: 8.5px; letter-spacing: .2em; text-transform: uppercase;
-    color: var(--accent); border: 1px solid rgba(111,214,255,.3); border-radius: 5px; padding: 2.5px 7px;
-  }
-  .card-type.warm { color: var(--accent-warm); border-color: rgba(255,178,107,.32); }
-  .card-desc { font-size: 12.5px; line-height: 1.75; color: var(--muted); }
-  .card-foot { margin-top: 16px; display: flex; align-items: center; gap: 10px; }
-  .chips { display: flex; gap: 7px; flex-wrap: wrap; }
-  .chip {
-    font-family: var(--mono); font-size: 9px; letter-spacing: .07em;
-    color: var(--muted-2); border: 1px solid var(--line); border-radius: 999px; padding: 3.5px 11px;
-    transition: all .3s;
-  }
-  .card:hover .chip { border-color: var(--line-strong); color: var(--muted); }
-  .card-go {
-    margin-left: auto; display: inline-flex; align-items: center; justify-content: center;
-    width: 30px; height: 30px; border-radius: 50%;
-    border: 1px solid var(--line-strong); color: var(--muted);
-    font-size: 11px; transition: all .35s var(--ease); flex-shrink: 0;
-  }
-  .card:hover .card-go {
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    color: #081018; border-color: transparent;
-    transform: rotate(45deg);
-    box-shadow: 0 4px 18px rgba(111,214,255,.35);
-  }
-
-  /* ═══════════════ Footer ═══════════════ */
-  .footer { position: relative; z-index: 1; border-top: 1px solid var(--line); background: rgba(7,8,12,.7); overflow: hidden; }
-  .footer-ghost {
-    position: absolute; left: 50%; bottom: -34px; transform: translateX(-50%);
-    font-family: var(--mono); font-size: clamp(80px, 13vw, 150px); font-weight: 700; letter-spacing: .08em;
-    color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,.05); pointer-events: none; user-select: none;
-    white-space: nowrap;
+  /* ══════════ Footer（Apple 风格）══════════ */
+  .footer {
+    background: var(--section);
+    border-top: 1px solid var(--hairline);
+    font-size: 12px; color: var(--gray);
   }
   .footer-inner {
-    position: relative; max-width: 1060px; margin: 0 auto; padding: 52px 30px 40px;
-    display: flex; align-items: flex-start; gap: 40px;
+    max-width: 1024px; margin: 0 auto;
+    padding: 20px 22px 26px;
   }
-  .footer-brand .name { font-family: var(--serif); font-size: 22px; }
-  .footer-brand .stmt { margin-top: 10px; font-size: 11.5px; color: var(--muted-2); line-height: 1.8; max-width: 260px; }
-  .footer-cols { display: flex; gap: 64px; margin-left: auto; }
-  .footer-col h4 { font-family: var(--mono); font-size: 9px; letter-spacing: .24em; text-transform: uppercase; color: var(--muted-2); margin-bottom: 14px; font-weight: 500; }
-  .footer-col a { display: block; font-size: 12.5px; color: var(--muted); text-decoration: none; padding: 4px 0; transition: color .25s, transform .25s; }
-  .footer-col a:hover { color: var(--accent); transform: translateX(3px); }
+  .footer-note { line-height: 1.6; max-width: 800px; }
+  .footer-links {
+    display: flex; flex-wrap: wrap; gap: 0 24px;
+    padding: 12px 0; margin-top: 10px;
+    border-top: 1px solid var(--hairline);
+  }
+  .footer-links a { color: var(--gray); }
+  .footer-links a:hover { color: var(--ink); }
   .footer-bottom {
-    position: relative; max-width: 1060px; margin: 0 auto; padding: 20px 30px 26px;
-    display: flex; align-items: center; gap: 18px;
-    border-top: 1px solid var(--line);
-    font-family: var(--mono); font-size: 9.5px; color: var(--muted-2); letter-spacing: .08em;
+    margin-top: 10px;
+    display: flex; flex-wrap: wrap; gap: 8px 24px;
+    justify-content: space-between;
   }
-  .footer-bottom .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-leaf); box-shadow: 0 0 7px var(--accent-leaf); animation: pulse 2.4s infinite; }
-  .footer-bottom .right { margin-left: auto; display: flex; gap: 20px; }
 
-  /* ── Reveal ── */
-  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
-  .reveal.in { opacity: 1; transform: none; }
-
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-    .hero h1 .char, .reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
-    .marquee-track { animation: none; }
-  }
   @media (max-width: 700px) {
-    .nav { padding: 0 18px; }
-    .clock, .nav-sep { display: none; }
-    .nav-link { font-size: 11.5px; }
-    .hero { padding: 64px 20px 40px; }
-    .hero-meta { flex-direction: column; gap: 8px; }
-    .section { padding: 44px 18px 70px; }
-    .section-head { flex-wrap: wrap; }
-    .count-pill { margin-left: 0; }
-    .footer-inner { flex-direction: column; gap: 34px; padding-top: 40px; }
-    .footer-cols { margin-left: 0; gap: 48px; }
-    .footer-bottom { flex-wrap: wrap; }
+    .nav-inner { gap: 20px; padding: 0 16px; }
+    .nav-links { gap: 20px; }
+    .hero { padding: 64px 20px 52px; }
+    .section { padding: 40px 16px 64px; }
+    .segmented button { padding: 7px 26px; }
+    .tile .links { gap: 24px; font-size: 16px; }
   }
 </style>
 </head>
 <body>
-<!-- 氛围层 -->
-<div class="atmosphere" aria-hidden="true">
-  <div class="glow glow-1"></div>
-  <div class="glow glow-2"></div>
-  <div class="glow glow-3"></div>
-  <div class="grid-lines"></div>
-  <div class="noise"></div>
-</div>
 
 <!-- 导航 -->
 <nav class="nav">
-  <a class="brand" href="/">
-    <span class="mark">r</span>
-    <span>
-      <div class="name">rainward</div>
-      <div class="tag">Portfolio</div>
-    </span>
-  </a>
-  <div class="nav-spacer"></div>
-  <span class="clock"><span class="dot"></span><span id="clock-text">--:--:--</span></span>
-  <span class="nav-sep"></span>
-  <a class="nav-link" href="https://github.com/rainward" target="_blank" rel="noopener">GitHub <span class="arrow">↗</span></a>
-  <a class="nav-link" href="mailto:2661909122@qq.com">Email <span class="arrow">↗</span></a>
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#1d1d1f" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0Zm0 3.6c1.7 0 3.1 1.4 3.1 3.1S13.7 9.8 12 9.8 8.9 8.4 8.9 6.7 10.3 3.6 12 3.6Zm5.6 14.2c-.9 1.5-2.1 2.6-3.6 2.6-.9 0-1.5-.4-2.5-.4s-1.7.4-2.5.4c-1.4 0-2.6-1.1-3.6-2.7C4 15.6 4.7 12 6.2 10.2c.8-1 1.8-1.5 2.8-1.5 1 0 1.7.4 2.5.4.8 0 1.5-.4 2.5-.4 1 0 2.1.5 2.9 1.5.2.3.2.4-.3 2.1-.7 2.4-.3 3.4 1 5.5Z"/></svg>
+      rainward
+    </a>
+    <div class="nav-links">
+      <a href="/">首页</a>
+      <a href="#tools">精选工具</a>
+      <a href="#games">精选游戏</a>
+      <a href="https://github.com/rainward" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
 </nav>
 
 <!-- Hero -->
 <header class="hero">
-  <div class="eyebrow">Selected Works · 2026</div>
-  <h1 id="hero-title"><span class="grad char">精</span><span class="grad char">选</span><span class="grad char">作</span><span class="grad char">品</span><span class="grad char">集</span><span class="punct char">。</span></h1>
-  <p class="sub"><span class="hair"></span>精选工具与游戏——每一个都经过打磨<span class="hair"></span></p>
-  <div class="hero-meta">
-    <span>TYPE · <b>TOOLS / GAMES</b></span>
-    <span>LOCATION · <b>CHINA</b></span>
-    <span>STATUS · <b>SHIPPING</b></span>
-  </div>
+  <h1>精选作品<span class="period">。</span></h1>
+  <p class="sub">精选工具与游戏——每一个都经过打磨。</p>
 </header>
-
-<!-- 跑马灯 -->
-<div class="marquee" aria-hidden="true">
-  <div class="marquee-track" id="marquee-track">
-    <span>Tools 工具</span><span>Games 游戏</span><span>Design 设计</span><span>Engineering 工程</span><span>Open Source 开源</span><span>Minimal 极简</span><span>Practical 实用</span><span>Polished 打磨</span>
-  </div>
-</div>
 
 <!-- 内容 -->
 <main class="section">
-  <div class="section-head reveal">
-    <span class="section-index" id="section-index">01 / 工具</span>
-    <div class="tabs" id="tabs">
-      <span class="tab-indicator" id="tab-ind"></span>
-      <button class="tab active" data-panel="tools">精选工具 <kbd>1</kbd></button>
-      <button class="tab" data-panel="games">精选游戏 <kbd>2</kbd></button>
-    </div>
-    <span class="count-pill" id="count-pill">共 <b>1</b> 项</span>
+  <div class="segmented" id="segmented">
+    <span class="thumb" id="thumb"></span>
+    <button data-panel="tools">精选工具</button>
+    <button data-panel="games">精选游戏</button>
   </div>
 
   <!-- 精选工具 -->
   <section class="panel active" id="panel-tools">
-    <div class="grid">
-      <a class="card reveal" href="/resume/">
-        <div class="card-art">
-          <span class="num">NO.01</span>
-          <svg class="float" width="150" height="128" viewBox="0 0 150 128" fill="none" aria-hidden="true">
-            <defs>
-              <linearGradient id="docEdge" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stop-color="#6fd6ff" stop-opacity=".65"/>
-                <stop offset="1" stop-color="#b79cff" stop-opacity=".45"/>
-              </linearGradient>
-              <linearGradient id="docHead" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stop-color="#6fd6ff"/><stop offset="1" stop-color="#8ea2ff"/>
-              </linearGradient>
-              <linearGradient id="docAvatar" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stop-color="#b79cff"/><stop offset="1" stop-color="#ff9ac2"/>
-              </linearGradient>
-            </defs>
-            <g transform="rotate(-4 75 64)">
-              <rect x="37" y="14" width="76" height="100" rx="9" fill="#151a26" stroke="url(#docEdge)" stroke-width="1.2"/>
-              <path d="M37 23a9 9 0 0 1 9-9h58a9 9 0 0 1 9 9v7H37v-7Z" fill="url(#docHead)" opacity=".92"/>
-              <circle cx="54" cy="42" r="8" fill="url(#docAvatar)"/>
-              <rect x="67" y="35" width="36" height="4.5" rx="2.25" fill="#ffffff" opacity=".16"/>
-              <rect x="67" y="45" width="26" height="3.5" rx="1.75" fill="#ffffff" opacity=".1"/>
-              <rect x="46" y="66" width="58" height="4" rx="2" fill="#ffffff" opacity=".12"/>
-              <rect x="46" y="76" width="58" height="4" rx="2" fill="#ffffff" opacity=".12"/>
-              <rect x="46" y="86" width="40" height="4" rx="2" fill="#ffffff" opacity=".12"/>
-              <rect x="46" y="96" width="58" height="4" rx="2" fill="#ffffff" opacity=".12"/>
-            </g>
-            <g class="float d2" transform="translate(108 92)">
-              <rect x="0" y="0" width="38" height="20" rx="10" fill="#0f131d" stroke="#6fd6ff" stroke-opacity=".4"/>
-              <text x="19" y="14" text-anchor="middle" font-family="Consolas, monospace" font-size="8" fill="#6fd6ff" letter-spacing="1.5">PDF</text>
-            </g>
-          </svg>
-        </div>
-        <div class="card-body">
-          <div class="card-title-row">
-            <span class="card-title">简历生成器</span>
-            <span class="card-type">Tool</span>
-          </div>
-          <p class="card-desc">照片上传、自定义栏目、多种模板与主题色，一键导出 PDF，数据本地保存。</p>
-          <div class="card-foot">
-            <div class="chips">
-              <span class="chip">PDF 导出</span>
-              <span class="chip">多模板</span>
-              <span class="chip">本地数据</span>
-            </div>
-            <span class="card-go">↗</span>
-          </div>
-        </div>
-      </a>
+    <div class="tile">
+      <h2>简历生成器</h2>
+      <p class="tagline">照片上传、自定义栏目、多种模板与主题色，一键导出 PDF，数据本地保存。</p>
+      <div class="links">
+        <a href="/resume/">进一步了解 <span class="chev">›</span></a>
+        <a href="/resume/">立即体验 <span class="chev">›</span></a>
+      </div>
+      <div class="visual resume">
+        <svg width="520" height="300" viewBox="0 0 520 300" fill="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="docHead" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#0071e3"/><stop offset="1" stop-color="#5ac8fa"/>
+            </linearGradient>
+            <linearGradient id="docAvatar" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#0071e3"/><stop offset="1" stop-color="#66b3ff"/>
+            </linearGradient>
+          </defs>
+          <!-- 投影 -->
+          <ellipse cx="260" cy="258" rx="150" ry="16" fill="#0b3a6b" opacity=".08"/>
+          <!-- 左侧小卡 -->
+          <g transform="translate(72 46) rotate(-8 56 62)">
+            <rect width="112" height="124" rx="14" fill="#ffffff" stroke="#e0e5ec"/>
+            <rect x="16" y="18" width="52" height="7" rx="3.5" fill="#c8d4e4"/>
+            <rect x="16" y="32" width="80" height="5" rx="2.5" fill="#e6ebf2"/>
+            <rect x="16" y="43" width="72" height="5" rx="2.5" fill="#e6ebf2"/>
+            <circle cx="32" cy="76" r="13" fill="url(#docAvatar)"/>
+            <rect x="52" y="68" width="44" height="5" rx="2.5" fill="#dde4ee"/>
+            <rect x="52" y="80" width="32" height="5" rx="2.5" fill="#e6ebf2"/>
+            <rect x="16" y="100" width="80" height="5" rx="2.5" fill="#e6ebf2"/>
+          </g>
+          <!-- 主文档 -->
+          <g transform="translate(228 30)">
+            <rect width="164" height="204" rx="16" fill="#ffffff" stroke="#dbe2ec"/>
+            <path d="M0 16a16 16 0 0 1 16-16h132a16 16 0 0 1 16 16v40H0V16Z" fill="url(#docHead)"/>
+            <circle cx="30" cy="66" r="16" fill="url(#docAvatar)" stroke="#ffffff" stroke-width="3"/>
+            <rect x="54" y="54" width="88" height="8" rx="4" fill="#dbe4ef"/>
+            <rect x="54" y="70" width="60" height="6" rx="3" fill="#e6ebf2"/>
+            <rect x="26" y="112" width="112" height="7" rx="3.5" fill="#e3e9f1"/>
+            <rect x="26" y="130" width="112" height="7" rx="3.5" fill="#e3e9f1"/>
+            <rect x="26" y="148" width="84" height="7" rx="3.5" fill="#e3e9f1"/>
+            <rect x="26" y="166" width="112" height="7" rx="3.5" fill="#e3e9f1"/>
+            <rect x="26" y="184" width="96" height="7" rx="3.5" fill="#e3e9f1"/>
+          </g>
+          <!-- PDF 徽章 -->
+          <g transform="translate(380 214)">
+            <rect width="72" height="34" rx="17" fill="#0071e3"/>
+            <text x="36" y="22" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#ffffff" letter-spacing="1">PDF</text>
+          </g>
+          <!-- 对勾圆 -->
+          <g transform="translate(392 92)">
+            <circle r="22" fill="#e8f5e9"/>
+            <path d="M-8 1.5 2.5 12l16-16" stroke="#34c759" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+        </svg>
+      </div>
     </div>
   </section>
 
   <!-- 精选游戏 -->
   <section class="panel" id="panel-games">
-    <div class="grid">
-      <a class="card reveal" href="/watermelon/">
-        <div class="card-art watermelon">
-          <span class="num">NO.02</span>
-          <svg class="float" width="170" height="128" viewBox="0 0 170 128" fill="none" aria-hidden="true">
-            <defs>
-              <linearGradient id="wmFlesh" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#ff7a6b"/><stop offset="1" stop-color="#ff4d6b"/>
-              </linearGradient>
-              <linearGradient id="wmRind" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#3f9e6b"/><stop offset="1" stop-color="#1d6b45"/>
-              </linearGradient>
-              <radialGradient id="wmGlow" cx=".5" cy=".5" r=".5">
-                <stop offset="0" stop-color="#ffb26b" stop-opacity=".35"/><stop offset="1" stop-color="#ffb26b" stop-opacity="0"/>
-              </radialGradient>
-            </defs>
-            <ellipse cx="85" cy="72" rx="72" ry="48" fill="url(#wmGlow)"/>
-            <g transform="translate(85 66)">
-              <path d="M -62 0 A 62 62 0 0 1 62 0 L 62 10 A 62 62 0 0 0 -62 10 Z" fill="url(#wmRind)" opacity=".95"/>
-              <path d="M -54 10 A 54 54 0 0 1 54 10 L 54 13 A 54 54 0 0 0 -54 13 Z" fill="#e8f5d8" opacity=".85"/>
-              <path d="M -46 0 A 46 46 0 0 1 46 0 L 46 13 A 46 46 0 0 0 -46 13 Z" fill="url(#wmFlesh)"/>
-              <ellipse cx="-22" cy="12" rx="2.6" ry="3.6" transform="rotate(-14 -22 12)" fill="#3a1020" opacity=".85"/>
-              <ellipse cx="2" cy="6" rx="2.6" ry="3.6" transform="rotate(6 2 6)" fill="#3a1020" opacity=".85"/>
-              <ellipse cx="22" cy="14" rx="2.6" ry="3.6" transform="rotate(18 22 14)" fill="#3a1020" opacity=".85"/>
-              <ellipse cx="-10" cy="30" rx="2.4" ry="3.2" transform="rotate(-8 -10 30)" fill="#3a1020" opacity=".7"/>
-              <ellipse cx="12" cy="32" rx="2.4" ry="3.2" transform="rotate(10 12 32)" fill="#3a1020" opacity=".7"/>
-              <ellipse cx="-34" cy="34" rx="2.2" ry="2.9" transform="rotate(-22 -34 34)" fill="#3a1020" opacity=".6"/>
-              <ellipse cx="34" cy="30" rx="2.2" ry="2.9" transform="rotate(22 34 30)" fill="#3a1020" opacity=".6"/>
-            </g>
-            <g class="float d2" transform="translate(146 24)">
-              <circle cx="0" cy="0" r="9" fill="#ffb26b" opacity=".9"/>
-              <circle cx="3" cy="-3" r="3.5" fill="#ffffff" opacity=".35"/>
-              <path d="M -1 -12 Q 4 -16 9 -12" stroke="#3f9e6b" stroke-width="2" stroke-linecap="round" fill="none"/>
-            </g>
-          </svg>
-        </div>
-        <div class="card-body">
-          <div class="card-title-row">
-            <span class="card-title">合成大西瓜</span>
-            <span class="card-type warm">Game</span>
-          </div>
-          <p class="card-desc">经典合成玩法：落下水果，两两合成，西瓜满贯即通关。物理引擎驱动，全屏触控。</p>
-          <div class="card-foot">
-            <div class="chips">
-              <span class="chip">Matter.js</span>
-              <span class="chip">触屏支持</span>
-              <span class="chip">本地运行</span>
-            </div>
-            <span class="card-go">↗</span>
-          </div>
-        </div>
-      </a>
+    <div class="tile">
+      <span class="badge">全新</span>
+      <h2>合成大西瓜</h2>
+      <p class="tagline">经典合成玩法：落下水果，两两合成，西瓜满贯即通关。物理引擎驱动，全屏触控。</p>
+      <div class="links">
+        <a href="/watermelon/">进一步了解 <span class="chev">›</span></a>
+        <a href="/watermelon/">开始游戏 <span class="chev">›</span></a>
+      </div>
+      <div class="visual watermelon">
+        <svg width="520" height="300" viewBox="0 0 520 300" fill="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="wmFlesh" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ff7a6b"/><stop offset="1" stop-color="#ff4d5e"/>
+            </linearGradient>
+            <linearGradient id="wmRind" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#4fae6a"/><stop offset="1" stop-color="#2f7d44"/>
+            </linearGradient>
+          </defs>
+          <!-- 投影 -->
+          <ellipse cx="248" cy="252" rx="170" ry="18" fill="#7a3d10" opacity=".09"/>
+          <!-- 西瓜 -->
+          <g transform="translate(248 154)">
+            <path d="M -132 0 A 132 132 0 0 1 132 0 L 132 22 A 132 132 0 0 0 -132 22 Z" fill="url(#wmRind)"/>
+            <path d="M -116 22 A 116 116 0 0 1 116 22 L 116 28 A 116 116 0 0 0 -116 28 Z" fill="#fdf6e3"/>
+            <path d="M -100 0 A 100 100 0 0 1 100 0 L 100 28 A 100 100 0 0 0 -100 28 Z" fill="url(#wmFlesh)"/>
+            <ellipse cx="-52" cy="26" rx="6" ry="8" transform="rotate(-14 -52 26)" fill="#4a1d2a" opacity=".85"/>
+            <ellipse cx="0" cy="14" rx="6" ry="8" transform="rotate(4 0 14)" fill="#4a1d2a" opacity=".85"/>
+            <ellipse cx="50" cy="28" rx="6" ry="8" transform="rotate(16 50 28)" fill="#4a1d2a" opacity=".85"/>
+            <ellipse cx="-26" cy="62" rx="5" ry="7" transform="rotate(-9 -26 62)" fill="#4a1d2a" opacity=".7"/>
+            <ellipse cx="28" cy="66" rx="5" ry="7" transform="rotate(11 28 66)" fill="#4a1d2a" opacity=".7"/>
+            <ellipse cx="-76" cy="70" rx="5" ry="6" transform="rotate(-22 -76 70)" fill="#4a1d2a" opacity=".55"/>
+            <ellipse cx="74" cy="62" rx="5" ry="6" transform="rotate(22 74 62)" fill="#4a1d2a" opacity=".55"/>
+          </g>
+          <!-- 小橙子 -->
+          <g transform="translate(400 64)">
+            <circle r="20" fill="#ffb26b"/>
+            <circle cx="6" cy="-7" r="8" fill="#ffffff" opacity=".4"/>
+            <path d="M 0 -24 Q 9 -32 20 -24" stroke="#4fae6a" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+          </g>
+          <!-- 分数气泡 -->
+          <g transform="translate(86 60)">
+            <rect width="96" height="42" rx="21" fill="#ffffff" stroke="#f0dcc3"/>
+            <text x="48" y="27" text-anchor="middle" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#e0784a">2048</text>
+          </g>
+        </svg>
+      </div>
     </div>
   </section>
 </main>
 
 <!-- Footer -->
 <footer class="footer">
-  <div class="footer-ghost" aria-hidden="true">RAINWARD</div>
   <div class="footer-inner">
-    <div class="footer-brand">
-      <div class="name">rainward</div>
-      <p class="stmt">构建简洁、实用的数字产品。<br>有的正在打磨，有的还在路上。</p>
+    <p class="footer-note">
+      1. 所有工具与游戏均在本地运行，数据不离开你的设备。<br>
+      2. 部分页面为个人实验项目，可能随版本迭代而变化。
+    </p>
+    <div class="footer-links">
+      <a href="/">首页</a>
+      <a href="#tools">精选工具</a>
+      <a href="#games">精选游戏</a>
+      <a href="/resume/">简历生成器</a>
+      <a href="/watermelon/">合成大西瓜</a>
+      <a href="https://github.com/rainward" target="_blank" rel="noopener">GitHub</a>
+      <a href="mailto:2661909122@qq.com">Email</a>
     </div>
-    <div class="footer-cols">
-      <div class="footer-col">
-        <h4>Explore</h4>
-        <a href="/resume/">简历生成器</a>
-        <a href="/watermelon/">合成大西瓜</a>
-      </div>
-      <div class="footer-col">
-        <h4>Connect</h4>
-        <a href="https://github.com/rainward" target="_blank" rel="noopener">GitHub</a>
-        <a href="mailto:2661909122@qq.com">Email</a>
-      </div>
+    <div class="footer-bottom">
+      <span>Copyright © 2026 rainward. 保留所有权利。</span>
+      <span>隐私政策 | 使用条款</span>
     </div>
-  </div>
-  <div class="footer-bottom">
-    <span class="dot"></span>
-    <span>© 2026 rainward · 保留所有权利</span>
-    <span class="right">
-      <span>BUILT WITH CARE</span>
-      <span>V3.0</span>
-    </span>
   </div>
 </footer>
 
@@ -559,80 +360,52 @@
 (function () {
   'use strict'
 
-  /* ── 北京时间时钟 ── */
-  var clockText = document.getElementById('clock-text')
-  function tick() {
-    var t = new Intl.DateTimeFormat('zh-CN', {
-      timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-    }).format(new Date())
-    clockText.textContent = '北京 ' + t
-  }
-  tick(); setInterval(tick, 1000)
+  var segmented = document.getElementById('segmented')
+  var thumb = document.getElementById('thumb')
 
-  /* ── Hero 逐字入场 ── */
-  var chars = document.querySelectorAll('#hero-title .char')
-  chars.forEach(function (c, i) { c.style.animationDelay = (0.08 + i * 0.09) + 's' })
-
-  /* ── 跑马灯无缝循环（内容翻倍）── */
-  var track = document.getElementById('marquee-track')
-  track.innerHTML += track.innerHTML
-
-  /* ── 板块切换 ── */
-  var tabs = document.getElementById('tabs')
-  var tabInd = document.getElementById('tab-ind')
-  var pill = document.getElementById('count-pill')
-  var sectionIndex = document.getElementById('section-index')
-  var counts = {
-    tools: document.querySelectorAll('#panel-tools .card').length,
-    games: document.querySelectorAll('#panel-games .card').length
-  }
-  var labels = { tools: '01 / 工具', games: '02 / 游戏' }
-
-  function moveIndicator(btn) {
-    tabInd.style.left = (btn.offsetLeft - 4) + 'px'
-    tabInd.style.width = btn.offsetWidth + 'px'
+  function moveThumb(btn) {
+    thumb.style.left = btn.offsetLeft + 'px'
+    thumb.style.width = btn.offsetWidth + 'px'
   }
 
   function activate(panel) {
-    document.querySelectorAll('.tab').forEach(function (b) {
+    document.querySelectorAll('.segmented button').forEach(function (b) {
       var on = b.dataset.panel === panel
-      b.classList.toggle('active', on)
-      if (on) moveIndicator(b)
+      if (on) moveThumb(b)
     })
     document.querySelectorAll('.panel').forEach(function (p) {
       p.classList.toggle('active', p.id === 'panel-' + panel)
     })
-    pill.innerHTML = '共 <b>' + counts[panel] + '</b> 项'
-    sectionIndex.textContent = labels[panel]
     if (location.hash !== '#' + panel) history.replaceState(null, '', '#' + panel)
   }
 
-  tabs.addEventListener('click', function (e) {
-    var btn = e.target.closest('.tab')
+  segmented.addEventListener('click', function (e) {
+    var btn = e.target.closest('button')
     if (btn) activate(btn.dataset.panel)
   })
 
-  /* 键盘快捷键 1 / 2 */
+  /* 键盘 1 / 2 静默切换 */
   document.addEventListener('keydown', function (e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
     if (e.key === '1') activate('tools')
     if (e.key === '2') activate('games')
   })
 
+  /* 初始状态：跟随 hash；否则默认工具 */
   var initial = (location.hash || '').replace('#', '')
   activate(initial === 'games' ? 'games' : 'tools')
-  window.addEventListener('resize', function () {
-    var b = document.querySelector('.tab.active')
-    if (b) moveIndicator(b)
+
+  /* 导航 hash 链接点击时同步切换 */
+  window.addEventListener('hashchange', function () {
+    var h = (location.hash || '').replace('#', '')
+    if (h === 'tools' || h === 'games') activate(h)
   })
 
-  /* ── 滚动 Reveal ── */
-  var io = new IntersectionObserver(function (entries) {
-    entries.forEach(function (en) {
-      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target) }
-    })
-  }, { threshold: .1 })
-  document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el) })
+  window.addEventListener('resize', function () {
+    var b = document.querySelector('.segmented button[data-panel="' +
+      (document.querySelector('.panel.active').id.replace('panel-', '')) + '"]')
+    if (b) moveThumb(b)
+  })
 })()
 </script>
 </body>
